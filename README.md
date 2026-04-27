@@ -223,3 +223,90 @@ All existing code continues to work. The enhanced behavior is opt-in through:
 - The automatic pending draw tracking (works with existing `draw()` + `resize()` patterns)
 - New optional `autoDraw` parameter in `resize()`
 - New convenience methods like `refresh()`
+
+---
+
+## Resize 使用时机指南
+
+### 何时应该调用 resize()
+
+| 场景 | 时机 | 推荐调用方式 |
+|------|------|-------------|
+| **修改 canvas.width/height 后** | 立即调用 | `heat.resize()` |
+| **容器从隐藏变为显示** | 显示后调用 | `heat.resize()` 或 `heat.refresh()` |
+| **Tab 从未激活变为激活** | 激活时调用 | `heat.refresh()` |
+| **窗口 resize 后** | 尺寸稳定后调用 | `heat.resize(true)` |
+| **需要强制重绘时** | 任何时候 | `heat.refresh()` |
+
+### resize() 参数行为详解
+
+| 调用方式 | 条件 | 行为 |
+|----------|------|------|
+| `heat.resize()` | 尺寸从 0→有效 + 有待绘制 | ✅ 自动重绘 |
+| `heat.resize()` | 其他情况 | 只同步尺寸，不重绘 |
+| `heat.resize(true)` | 任何情况 | ✅ 强制重绘 |
+| `heat.resize(false)` | 任何情况 | 只同步尺寸，不重绘 |
+
+### 便捷方法对比
+
+| 方法 | 等价于 | 适用场景 |
+|------|--------|---------|
+| `heat.refresh()` | `heat.resize(true).draw()` | 最简单，一键完成 |
+| `heat.resize()` | 智能判断 | 需要精细控制时 |
+| `heat.resize(true)` | 强制重绘 | 需要确保绘制时 |
+| `heat.resize(false)` | 只同步尺寸 | 需要完全控制时 |
+
+---
+
+## 边界行为速查表
+
+### 0 宽高场景行为
+
+| 操作 | 0 宽度时 | 0 高度时 | 0x0 时 |
+|------|----------|----------|---------|
+| `heat.draw()` | ✅ 安全跳过，标记 `_pendingDraw=true` | ✅ 安全跳过，标记 `_pendingDraw=true` | ✅ 安全跳过，标记 `_pendingDraw=true` |
+| `heat.data()` | ✅ 数据保持，不丢失 | ✅ 数据保持，不丢失 | ✅ 数据保持，不丢失 |
+| `heat.max()` | ✅ 配置保持，不丢失 | ✅ 配置保持，不丢失 | ✅ 配置保持，不丢失 |
+| `heat.radius()` | ✅ 配置保持，不丢失 | ✅ 配置保持，不丢失 | ✅ 配置保持，不丢失 |
+| `heat.gradient()` | ✅ 配置保持，不丢失 | ✅ 配置保持，不丢失 | ✅ 配置保持，不丢失 |
+| `heat.add()` | ✅ 数据追加，不丢失 | ✅ 数据追加，不丢失 | ✅ 数据追加，不丢失 |
+
+### 尺寸恢复场景行为
+
+| 场景 | 行为 |
+|------|------|
+| 从 0→有效尺寸 + `heat.resize()` + 有待绘制 | ✅ 自动重绘 |
+| 从 0→有效尺寸 + `heat.resize()` + 无待绘制 | 只同步尺寸 |
+| 从 0→有效尺寸 + `heat.refresh()` | ✅ 强制重绘 |
+| 有效→有效 + `heat.resize()` | 只同步尺寸 |
+| 有效→有效 + `heat.resize(true)` | ✅ 强制重绘 |
+| 多次尺寸切换 | ✅ 所有配置保持不变 |
+
+### 状态 API 参考
+
+| API | 用途 | 返回值示例 |
+|-----|------|------------|
+| `heat.isReady()` | 检查是否有有效尺寸 | `true` / `false` |
+| `heat.hasPendingDraw()` | 检查是否有待执行绘制 | `true` / `false` |
+| `heat.hasData()` | 检查是否有数据 | `true` / `false` |
+| `heat.getCanvasSize()` | 获取尺寸信息 | `{ width, height, previousWidth, previousHeight }` |
+
+---
+
+## 验证示例
+
+### 交互式验证 Demo
+
+项目包含 `demo-validation.html`，可用于手动验证所有边界场景：
+
+- 场景 1: 0 宽高跳过绘制
+- 场景 2: 恢复尺寸后重绘
+- 场景 3: 已有数据保留
+- 场景 4: 半径配置保留
+- 场景 5: 渐变配置保留
+- 场景 6: resize 使用时机
+
+### 自动化测试
+
+- `test-zero-size-comprehensive.html`: 第一轮测试（20 个用例）
+- `test-resize-enhanced.html`: 第二轮测试（25 个用例）
