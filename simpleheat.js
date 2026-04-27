@@ -72,6 +72,11 @@ simpleheat.prototype = {
     resize: function () {
         this._width = this._canvas.width;
         this._height = this._canvas.height;
+        return this;
+    },
+
+    _hasValidSize: function () {
+        return this._width > 0 && this._height > 0;
     },
 
     gradient: function (grad) {
@@ -96,6 +101,8 @@ simpleheat.prototype = {
     },
 
     draw: function (minOpacity) {
+        if (!this._hasValidSize()) return this;
+
         if (!this._circle) this.radius(this.defaultRadius);
         if (!this._grad) this.gradient(this.defaultGradient);
 

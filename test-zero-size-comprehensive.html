@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>simpleheat 0 尺寸 canvas 综合测试</title>
+    <style>
+        body { font: 14px/1.4 "Helvetica Neue", Arial, sans-serif; padding: 20px; }
+        h1 { font-size: 20px; margin-bottom: 20px; }
+        .test-suite { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 4px; background-color: #fafafa; }
+        .test-suite h2 { font-size: 16px; margin-top: 0; margin-bottom: 15px; color: #333; }
+        .test-case { margin: 10px 0; padding: 10px; border: 1px solid #e0e0e0; border-radius: 3px; background-color: #fff; }
+        .test-case h3 { font-size: 14px; margin-top: 0; margin-bottom: 8px; }
+        .test-result { padding: 8px 10px; margin-top: 8px; font-weight: bold; border-radius: 3px; }
+        .success { color: #2d6a4f; background-color: #d8f3dc; border: 1px solid #b7e4c7; }
+        .error { color: #7b2cbf; background-color: #ffd6e0; border: 1px solid #ffb3c1; }
+        .pending { color: #6c757d; background-color: #e9ecef; border: 1px solid #dee2e6; }
+        canvas { display: none; }
+        .log { margin-top: 15px; padding: 10px; background-color: #212529; color: #f8f9fa; font-family: 'Consolas', monospace; font-size: 12px; max-height: 300px; overflow-y: auto; border-radius: 3px; }
+        .log .info { color: #6ea8fe; }
+        .log .success { color: #75b798; background-color: transparent; border: none; }
+        .log .error { color: #ea868f; background-color: transparent; border: none; }
+        .controls { margin-bottom: 20px; }
+        button { padding: 8px 16px; margin-right: 10px; cursor: pointer; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .summary { margin: 20px 0; padding: 15px; border: 2px solid #6c757d; border-radius: 4px; background-color: #fff; }
+        .summary h2 { margin-top: 0; margin-bottom: 10px; }
+        .summary .passed { color: #2d6a4f; font-weight: bold; }
+        .summary .failed { color: #7b2cbf; font-weight: bold; }
+        .hidden-container { display: none; }
+    </style>
+</head>
+<body>
+    <h1>simpleheat 0 尺寸 canvas 综合测试</h1>
+
+    <div class="controls">
+        <button id="runAllBtn" onclick="runAllTests()">运行所有测试</button>
+        <button id="resetBtn" onclick="resetTests()">重置测试</button>
+    </div>
+
+    <div id="summary" class="summary" style="display: none;">
+        <h2>测试结果汇总</h2>
+        <div id="summaryContent"></div>
+    </div>
+
+    <canvas id="testCanvas" width="1000" height="600"></canvas>
+    <canvas id="testCanvasZero" width="0" height="0"></canvas>
+
+    <div class="hidden-container">
+        <canvas id="hiddenCanvas" width="800" height="600"></canvas>
+    </div>
+
+    <div class="test-suite">
+        <h2>测试套件 1: 基础尺寸校验</h2>
+
+        <div class="test-case" id="test1">
+            <h3>1.1 _hasValidSize() 方法对正常尺寸返回 true</h3>
+            <button onclick="runTest(1, test1_1)">运行</button>
+            <div class="test-result pending">等待测试...</div>
+        </div>
+
+        <div class="test-case" id="test2">
+            <h3>1.2 _hasValidSize() 方法对 0 宽度返回 false</h3>
+            <button onclick="runTest(2, test1_2)">运行</button>
+            <div class="test-result pending">等待测试...</div>
+        </div>
+
+        <div class="test-case" id="test3">
+            <h3>1.3 _hasValidSize() 方法对 0 高度返回 false</h3>
+            <button onclick="runTest(3, test1_3)">运行</button>
+            <div class="test-result pending">等待测试...</div>
+        </div>
+
+        <div class="test-case" id="test4">
+            <h3>1.4 _hasValidSize() 方法对 0x0 返回 false</h3>
+            <button onclick="runTest(4, test1_4)">运行</button>
+            <div class="test-result pending">等待测试...</div>
+        </div>
+    </div>
+
+    <div class="test-suite">
+        <h2>测试套件 2: 0 尺寸下调用 draw() 不报错</h2>
+
+        <div class="test-case" id="test5">
+            <h3>2.1 初始化时宽度为 0，调用 draw() 不报错</h3>
+            <button onclick="runTest(5, test2_1)">运行</button>
+            <div class="test-result pending">等待测试...</div>
+        </div>
+
+        <div class="test-case" id="test6">
+            <h3>2.2 初始化时高度为 0，调用 draw() 不报错</h3>
+            <button onclick="runTest(6, test2_2)">运行</button>
+            <div class="test-result pending">等待测试...</div>
+        </div>
+
+        <div class="test-case" id="test7">
+            <h3>2.3 初始化时宽高都为 0，调用 draw() 不报错</h3>
+            <button onclick="runTest(7, test2_3)">运行</button>
+            <div class="test-result pending">等待测试...</div>
+        </div>
+
+        <div class="test-case" id="test8">
+            <h3>2.4 正常尺寸后设置为 0 尺寸，调用 draw() 不报错</h3>
+            <button onclick="runTest(8, test2_4)">运行</button>
+            <div class="test-result pending">等待测试...</div>
+        </div>
+    </div>
+
+    <div class="test-suite">
+        <h2>测试套件 3: 0 尺寸下配置保持不变</h2>
+
+        <div class="test-case" id="test9">
+            <h3>3.1 0 尺寸下设置 data()，数据保持不变</h3>
+            <button onclick="runTest(9, test3_1)">运行</button>
+            <div class="test-result pending">等待测试...</div>
+        </div>
+
+        <div class="test-case" id="test10">
+            <h3>3.2 0 尺寸下设置 max()，值保持不变</h3>
+            <button onclick="runTest(10, test3_2)">运行</button>
+            <div class="test-result pending">等待测试...</div>
+        </div>
+
+        <div class="test-case" id="test11">
+            <h3>3.3 0 尺寸下设置 radius()，配置保持不变</h3>
+            <button onclick="runTest(11, test3_3)">运行</button>
+            <div class="test-result pending">等待测试...</div>
+        </div>
+
+        <div class="test-case" id="test12">
+            <h3>3.4 0 尺寸下设置 gradient()，配置保持不变</h3>
+            <button onclick="runTest(12, test3_4)">运行</button>
+            <div class="test-result pending">等待测试...</div>
+        </div>
+
+        <div class="test-case" id="test13">
+            <h3>3.5 0 尺寸下 add() 数据，数据正确追加</h3>
+            <button onclick="runTest(13, test3_5)">运行</button>
+            <div class="test-result pending">等待测试...</div>
+        </div>
+    </div>
+
+    <div class="test-suite">
+        <h2>测试套件 4: 链式调用保持正常</h2>
+
+        <div class="test-case" id="test14">
+            <h3>4.1 0 尺寸下链式调用正常工作</h3>
+            <button onclick="runTest(14, test4_1)">运行</button>
+            <div class="test-result pending">等待测试...</div>
+        </div>
+
+        <div class="test-case" id="test15">
+            <h3>4.2 resize() 返回 this，支持链式调用</h3>
+            <button onclick="runTest(15, test4_2)">运行</button>
+            <div class="test-result pending">等待测试...</div>
+        </div>
+
+        <div class="test-case" id="test16">
+            <h3>4.3 完整链式调用：data().max().resize().draw()</h3>
+            <button onclick="runTest(16, test4_3)">运行</button>
+            <div class="test-result pending">等待测试...</div>
+        </div>
+    </div>
+
+    <div class="test-suite">
+        <h2>测试套件 5: 恢复尺寸后正常绘制</h2>
+
+        <div class="test-case" id="test17">
+            <h3>5.1 初始 0 尺寸，设置 data，恢复尺寸后可正常绘制</h3>
+            <button onclick="runTest(17, test5_1)">运行</button>
+            <div class="test-result pending">等待测试...</div>
+        </div>
+
+        <div class="test-case" id="test18">
+            <h3>5.2 隐藏容器中的 canvas，显示后可正常绘制</h3>
+            <button onclick="runTest(18, test5_2)">运行</button>
+            <div class="test-result pending">等待测试...</div>
+        </div>
+
+        <div class="test-case" id="test19">
+            <h3>5.3 多次 0 尺寸和正常尺寸切换，数据保持一致</h3>
+            <button onclick="runTest(19, test5_3)">运行</button>
+            <div class="test-result pending">等待测试...</div>
+        </div>
+
+        <div class="test-case" id="test20">
+            <h3>5.4 0 尺寸期间添加数据，恢复后能正确渲染新数据</h3>
+            <button onclick="runTest(20, test5_4)">运行</button>
+            <div class="test-result pending">等待测试...</div>
+        </div>
+    </div>
+
+    <div class="log" id="log"></div>
+
+    <script src="simpleheat.js"></script>
+    <script>
+        var logDiv = document.getElementById('log');
+        var runAllBtn = document.getElementById('runAllBtn');
+        var resetBtn = document.getElementById('resetBtn');
+        var summaryDiv = document.getElementById('summary');
+        var summaryContent = document.getElementById('summaryContent');
+
+        var testResults = {};
+        var totalTests = 20;
+
+        function log(type, message) {
+            var time = new Date().toLocaleTimeString();
+            var div = document.createElement('div');
+            div.className = type;
+            div.textContent = '[' + time + '] ' + message;
+            logDiv.appendChild(div);
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log('[' + type + '] ' + message);
+        }
+
+        function assert(condition, message) {
+            if (!condition) {
+                throw new Error(message);
+            }
+        }
+
+        function getTestData() {
+            return [[100, 100, 5], [200, 200, 3], [300, 300, 4], [400, 400, 2]];
+        }
+
+        function setResult(testNum, success, message) {
+            var testCase = document.getElementById('test' + testNum);
+            var resultDiv = testCase.querySelector('.test-result');
+            resultDiv.textContent = message;
+            resultDiv.className = 'test-result ' + (success ? 'success' : 'error');
+            testResults[testNum] = success;
+
+            if (success) {
+                log('success', '测试 ' + testNum + ' 通过: ' + message);
+            } else {
+                log('error', '测试 ' + testNum + ' 失败: ' + message);
+            }
+        }
+
+        function runTest(testNum, testFunc) {
+            log('info', '开始运行测试 ' + testNum);
+            try {
+                testFunc();
+            } catch (e) {
+                setResult(testNum, false, '✗ 测试失败: ' + e.message);
+            }
+        }
+
+        function resetTests() {
+            testResults = {};
+            for (var i = 1; i <= totalTests; i++) {
+                var testCase = document.getElementById('test' + i);
+                if (testCase) {
+                    var resultDiv = testCase.querySelector('.test-result');
+                    resultDiv.textContent = '等待测试...';
+                    resultDiv.className = 'test-result pending';
+                }
+            }
+            summaryDiv.style.display = 'none';
+            logDiv.innerHTML = '';
+            log('info', '测试已重置');
+        }
+
+        function showSummary() {
+            var passed = 0;
+            var failed = 0;
+
+            for (var i = 1; i <= totalTests; i++) {
+                if (testResults[i] === true) {
+                    passed++;
+                } else if (testResults[i] === false) {
+                    failed++;
+                }
+            }
+
+            var notRun = totalTests - passed - failed;
+
+            summaryContent.innerHTML =
+                '<span class="passed">通过: ' + passed + '</span> | ' +
+                '<span class="failed">失败: ' + failed + '</span> | ' +
+                '未运行: ' + notRun;
+
+            if (passed > 0 || failed > 0) {
+                summaryDiv.style.display = 'block';
+            }
+
+            return failed === 0 && passed === totalTests;
+        }
+
+        function test1_1() {
+            log('info', '测试 _hasValidSize() 对正常尺寸返回 true');
+            var canvas = document.getElementById('testCanvas');
+            canvas.width = 1000;
+            canvas.height = 600;
+            var heat = simpleheat('testCanvas');
+
+            assert(heat._hasValidSize() === true, '_hasValidSize() 应该对 1000x600 返回 true');
+            setResult(1, true, '✓ _hasValidSize() 对 1000x600 正确返回 true');
+        }
+
+        function test1_2() {
+            log('info', '测试 _hasValidSize() 对 0 宽度返回 false');
+            var canvas = document.getElementById('testCanvas');
+            canvas.width = 0;
+            canvas.height = 600;
+            var heat = simpleheat('testCanvas');
+
+            assert(heat._hasValidSize() === false, '_hasValidSize() 应该对 0x600 返回 false');
+            setResult(2, true, '✓ _hasValidSize() 对 0x600 正确返回 false');
+        }
+
+        function test1_3() {
+            log('info', '测试 _hasValidSize() 对 0 高度返回 false');
+            var canvas = document.getElementById('testCanvas');
+            canvas.width = 1000;
+            canvas.height = 0;
+            var heat = simpleheat('testCanvas');
+
+            assert(heat._hasValidSize() === false, '_hasValidSize() 应该对 1000x0 返回 false');
+            setResult(3, true, '✓ _hasValidSize() 对 1000x0 正确返回 false');
+        }
+
+        function test1_4() {
+            log('info', '测试 _hasValidSize() 对 0x0 返回 false');
+            var canvas = document.getElementById('testCanvasZero');
+            var heat = simpleheat('testCanvasZero');
+
+            assert(heat._hasValidSize() === false, '_hasValidSize() 应该对 0x0 返回 false');
+            setResult(4, true, '✓ _hasValidSize() 对 0x0 正确返回 false');
+        }
+
+        function test2_1() {
+            log('info', '测试初始化时宽度为 0，调用 draw() 不报错');
+            var canvas = document.getElementById('testCanvas');
+            canvas.width = 0;
+            canvas.height = 600;
+            var heat = simpleheat('testCanvas').data(getTestData()).max(5);
+
+            var result = heat.draw();
+            assert(result === heat, 'draw() 应该返回 this 支持链式调用');
+            setResult(5, true, '✓ 宽度为 0 时 draw() 安全跳过，未抛出异常');
+        }
+
+        function test2_2() {
+            log('info', '测试初始化时高度为 0，调用 draw() 不报错');
+            var canvas = document.getElementById('testCanvas');
+            canvas.width = 1000;
+            canvas.height = 0;
+            var heat = simpleheat('testCanvas').data(getTestData()).max(5);
+
+            var result = heat.draw();
+            assert(result === heat, 'draw() 应该返回 this 支持链式调用');
+            setResult(6, true, '✓ 高度为 0 时 draw() 安全跳过，未抛出异常');
+        }
+
+        function test2_3() {
+            log('info', '测试初始化时宽高都为 0，调用 draw() 不报错');
+            var canvas = document.getElementById('testCanvasZero');
+            var heat = simpleheat('testCanvasZero').data(getTestData()).max(5);
+
+            var result = heat.draw();
+            assert(result === heat, 'draw() 应该返回 this 支持链式调用');
+            setResult(7, true, '✓ 宽高都为 0 时 draw() 安全跳过，未抛出异常');
+        }
+
+        function test2_4() {
+            log('info', '测试正常尺寸后设置为 0 尺寸，调用 draw() 不报错');
+            var canvas = document.getElementById('testCanvas');
+            canvas.width = 1000;
+            canvas.height = 600;
+            var heat = simpleheat('testCanvas').data(getTestData()).max(5);
+
+            heat.draw();
+
+            canvas.width = 0;
+            heat.resize();
+
+            var result = heat.draw();
+            assert(result === heat, 'draw() 应该返回 this 支持链式调用');
+            setResult(8, true, '✓ 正常尺寸后设置为 0 尺寸时 draw() 安全跳过');
+        }
+
+        function test3_1() {
+            log('info', '测试 0 尺寸下设置 data()，数据保持不变');
+            var canvas = document.getElementById('testCanvasZero');
+            var testData = getTestData();
+            var heat = simpleheat('testCanvasZero');
+
+            heat.data(testData);
+            heat.draw();
+
+            assert(heat._data === testData, 'data() 设置的数据应该保持不变');
+            assert(heat._data.length === 4, '数据长度应该为 4');
+            setResult(9, true, '✓ 0 尺寸下 data() 设置的数据保持不变');
+        }
+
+        function test3_2() {
+            log('info', '测试 0 尺寸下设置 max()，值保持不变');
+            var canvas = document.getElementById('testCanvasZero');
+            var heat = simpleheat('testCanvasZero');
+
+            heat.max(10);
+            heat.draw();
+
+            assert(heat._max === 10, 'max() 设置的值应该保持不变');
+            setResult(10, true, '✓ 0 尺寸下 max() 设置的值保持不变');
+        }
+
+        function test3_3() {
+            log('info', '测试 0 尺寸下设置 radius()，配置保持不变');
+            var canvas = document.getElementById('testCanvasZero');
+            var heat = simpleheat('testCanvasZero');
+
+            heat.radius(50, 30);
+            heat.draw();
+
+            assert(heat._r === 80, '_r 应该为 radius + blur = 80');
+            assert(heat._circle !== undefined, '_circle 应该被创建');
+            setResult(11, true, '✓ 0 尺寸下 radius() 配置保持不变');
+        }
+
+        function test3_4() {
+            log('info', '测试 0 尺寸下设置 gradient()，配置保持不变');
+            var canvas = document.getElementById('testCanvasZero');
+            var heat = simpleheat('testCanvasZero');
+            var customGradient = {0.2: 'blue', 0.5: 'lime', 0.8: 'yellow', 1: 'red'};
+
+            heat.gradient(customGradient);
+            heat.draw();
+
+            assert(heat._grad !== undefined, '_grad 应该被创建');
+            assert(heat._grad instanceof Uint8ClampedArray, '_grad 应该是 Uint8ClampedArray');
+            setResult(12, true, '✓ 0 尺寸下 gradient() 配置保持不变');
+        }
+
+        function test3_5() {
+            log('info', '测试 0 尺寸下 add() 数据，数据正确追加');
+            var canvas = document.getElementById('testCanvasZero');
+            var heat = simpleheat('testCanvasZero').data(getTestData());
+
+            heat.add([500, 500, 10]);
+            heat.draw();
+
+            assert(heat._data.length === 5, '数据长度应该为 5（初始4 + add1）');
+            assert(heat._data[4][0] === 500, '新增数据的 x 坐标应该为 500');
+            assert(heat._data[4][1] === 500, '新增数据的 y 坐标应该为 500');
+            assert(heat._data[4][2] === 10, '新增数据的 value 应该为 10');
+            setResult(13, true, '✓ 0 尺寸下 add() 数据正确追加');
+        }
+
+        function test4_1() {
+            log('info', '测试 0 尺寸下链式调用正常工作');
+            var canvas = document.getElementById('testCanvasZero');
+            var testData = getTestData();
+
+            var heat = simpleheat('testCanvasZero')
+                .data(testData)
+                .max(10)
+                .radius(30, 20)
+                .draw();
+
+            assert(heat._data === testData, 'data 应该正确设置');
+            assert(heat._max === 10, 'max 应该正确设置');
+            assert(heat._r === 50, '_r 应该正确设置');
+            setResult(14, true, '✓ 0 尺寸下链式调用正常工作');
+        }
+
+        function test4_2() {
+            log('info', '测试 resize() 返回 this，支持链式调用');
+            var canvas = document.getElementById('testCanvas');
+            canvas.width = 1000;
+            canvas.height = 600;
+            var heat = simpleheat('testCanvas');
+
+            var result = heat.resize();
+            assert(result === heat, 'resize() 应该返回 this');
+            setResult(15, true, '✓ resize() 返回 this，支持链式调用');
+        }
+
+        function test4_3() {
+            log('info', '测试完整链式调用：data().max().resize().draw()');
+            var canvas = document.getElementById('testCanvas');
+            canvas.width = 1000;
+            canvas.height = 600;
+            var testData = getTestData();
+
+            var heat = simpleheat('testCanvas')
+                .data(testData)
+                .max(5)
+                .resize()
+                .draw();
+
+            assert(heat._data === testData, 'data 应该正确设置');
+            assert(heat._max === 5, 'max 应该正确设置');
+            setResult(16, true, '✓ 完整链式调用正常工作');
+        }
+
+        function test5_1() {
+            log('info', '测试初始 0 尺寸，设置 data，恢复尺寸后可正常绘制');
+            var canvas = document.getElementById('testCanvas');
+            canvas.width = 0;
+            canvas.height = 0;
+            var testData = getTestData();
+
+            var heat = simpleheat('testCanvas')
+                .data(testData)
+                .max(5)
+                .radius(40, 25)
+                .gradient({0: 'blue', 1: 'red'});
+
+            heat.draw();
+            assert(heat._data.length === 4, '数据长度应该保持为 4');
+
+            canvas.width = 1000;
+            canvas.height = 600;
+            heat.resize();
+
+            assert(heat._hasValidSize() === true, 'resize() 后应该有有效尺寸');
+
+            var result = heat.draw();
+            assert(result === heat, 'draw() 应该返回 this');
+            setResult(17, true, '✓ 初始 0 尺寸，恢复后可正常绘制');
+        }
+
+        function test5_2() {
+            log('info', '测试隐藏容器中的 canvas，显示后可正常绘制');
+            var hiddenContainer = document.querySelector('.hidden-container');
+            var canvas = document.getElementById('hiddenCanvas');
+            var testData = getTestData();
+
+            var heat = simpleheat('hiddenCanvas')
+                .data(testData)
+                .max(5);
+
+            heat.draw();
+            assert(heat._data.length === 4, '数据长度应该保持为 4');
+
+            hiddenContainer.style.display = 'block';
+            heat.resize();
+
+            assert(heat._hasValidSize() === true, '显示后应该有有效尺寸');
+
+            var result = heat.draw();
+            assert(result === heat, 'draw() 应该返回 this');
+            setResult(18, true, '✓ 隐藏容器中的 canvas，显示后可正常绘制');
+        }
+
+        function test5_3() {
+            log('info', '测试多次 0 尺寸和正常尺寸切换，数据保持一致');
+            var canvas = document.getElementById('testCanvas');
+            var testData = getTestData();
+
+            var heat = simpleheat('testCanvas').data(testData).max(5);
+
+            canvas.width = 1000;
+            canvas.height = 600;
+            heat.resize().draw();
+            assert(heat._data.length === 4, '第一次正常尺寸：数据长度 4');
+
+            canvas.width = 0;
+            heat.resize().draw();
+            assert(heat._data.length === 4, '第一次 0 尺寸：数据长度仍为 4');
+
+            canvas.width = 1000;
+            heat.resize().draw();
+            assert(heat._data.length === 4, '第二次正常尺寸：数据长度仍为 4');
+
+            canvas.width = 0;
+            canvas.height = 0;
+            heat.resize().draw();
+            assert(heat._data.length === 4, '第二次 0x0：数据长度仍为 4');
+
+            canvas.width = 800;
+            canvas.height = 500;
+            heat.resize().draw();
+            assert(heat._data.length === 4, '恢复 800x500：数据长度仍为 4');
+
+            setResult(19, true, '✓ 多次尺寸切换，数据保持一致');
+        }
+
+        function test5_4() {
+            log('info', '测试 0 尺寸期间添加数据，恢复后能正确渲染新数据');
+            var canvas = document.getElementById('testCanvas');
+            canvas.width = 0;
+            canvas.height = 0;
+            var testData = getTestData();
+
+            var heat = simpleheat('testCanvas').data(testData).max(5);
+
+            heat.add([500, 500, 8]);
+            heat.add([600, 600, 6]);
+            heat.draw();
+
+            assert(heat._data.length === 6, '0 尺寸期间添加数据后，长度应为 6');
+
+            canvas.width = 1000;
+            canvas.height = 600;
+            heat.resize().draw();
+
+            assert(heat._data.length === 6, '恢复尺寸后，数据长度仍应为 6');
+            assert(heat._data[4][0] === 500, '第5个数据点 x 应为 500');
+            assert(heat._data[5][0] === 600, '第6个数据点 x 应为 600');
+
+            setResult(20, true, '✓ 0 尺寸期间添加的数据，恢复后能正确使用');
+        }
+
+        function runAllTests() {
+            runAllBtn.disabled = true;
+            log('info', '========== 开始运行所有测试 ==========');
+
+            var tests = [
+                {num: 1, func: test1_1},
+                {num: 2, func: test1_2},
+                {num: 3, func: test1_3},
+                {num: 4, func: test1_4},
+                {num: 5, func: test2_1},
+                {num: 6, func: test2_2},
+                {num: 7, func: test2_3},
+                {num: 8, func: test2_4},
+                {num: 9, func: test3_1},
+                {num: 10, func: test3_2},
+                {num: 11, func: test3_3},
+                {num: 12, func: test3_4},
+                {num: 13, func: test3_5},
+                {num: 14, func: test4_1},
+                {num: 15, func: test4_2},
+                {num: 16, func: test4_3},
+                {num: 17, func: test5_1},
+                {num: 18, func: test5_2},
+                {num: 19, func: test5_3},
+                {num: 20, func: test5_4}
+            ];
+
+            for (var i = 0; i < tests.length; i++) {
+                runTest(tests[i].num, tests[i].func);
+            }
+
+            var allPassed = showSummary();
+            if (allPassed) {
+                log('success', '========== 所有测试通过！==========');
+            } else {
+                log('error', '========== 部分测试失败 ==========');
+            }
+            runAllBtn.disabled = false;
+        }
+
+        log('info', '测试页面已加载，点击"运行所有测试"开始测试');
+    </script>
+</body>
+</html>
