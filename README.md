@@ -47,65 +47,179 @@ heat.radius(r, r2);
 heat.gradient(grad);
 
 // call in case Canvas size changed (returns this for chaining)
-heat.resize();
+// autoDraw: optional boolean - if true, forces a draw after resize
+// When autoDraw is undefined, it will auto-draw only if size changed from 0 to valid and there's a pending draw
+heat.resize(autoDraw);
+
+// Convenience method: resize and draw in one call
+heat.refresh(minOpacity);
 ```
 
 #### Rendering
 
 ```js
 // draw the heatmap with optional minimum point opacity (0.05 by default)
+// When canvas size is 0, marks _pendingDraw = true for future auto-render
 heat.draw(minOpacity);
+```
+
+#### State & Status APIs
+
+```js
+// Check if canvas has valid dimensions (width > 0 && height > 0)
+heat.isReady();  // returns boolean
+
+// Get current and previous canvas dimensions
+heat.getCanvasSize();
+// Returns: { width, height, previousWidth, previousHeight }
+
+// Check if there's a pending draw request (from calling draw() when size was 0)
+heat.hasPendingDraw();  // returns boolean
+
+// Check if any data has been added
+heat.hasData();  // returns boolean
+```
+
+#### Event Callbacks
+
+```js
+// Register a callback for canvas size changes
+heat.onSizeChange(function(event, heatInstance) {
+    // event contains:
+    // - oldWidth, oldHeight: previous dimensions
+    // - newWidth, newHeight: current dimensions
+    // - becameValid: true if size changed from 0 to valid
+});
+
+// Multiple callbacks can be registered
+heat.onSizeChange(callback1).onSizeChange(callback2);
 ```
 
 ## Handling Zero-Size Canvas
 
-When using simpleheat in scenarios where the canvas may initially have zero dimensions (e.g., hidden containers, inactive tabs, dynamic size changes), the library now handles these cases gracefully:
+When using simpleheat in scenarios where the canvas may initially have zero dimensions (e.g., hidden containers, inactive tabs, dynamic size changes), the library now handles these cases gracefully with enhanced state tracking and automatic recovery.
 
-### Behavior
+### Enhanced Behavior (v2)
 
-- **`draw()` with zero size**: When canvas width or height is 0, `draw()` will safely skip rendering without throwing errors. All configured data and settings remain intact.
-- **Data preservation**: All configurations (`data()`, `max()`, `radius()`, `gradient()`) are preserved even when the canvas has zero size.
-- **Chainable API**: All methods remain chainable, including `draw()` and `resize()`.
+- **Smart `draw()` with pending state**: When canvas width or height is 0, `draw()` marks `_pendingDraw = true` instead of just returning. This enables automatic redraw when canvas becomes valid.
+- **Automatic redraw on `resize()`**: When `resize()` detects that canvas changed from 0 to valid size AND there's a pending draw, it automatically calls `draw()`.
+- **State tracking**: New internal state variables track previous dimensions, pending draws, and data changes.
+- **All configurations preserved**: `data()`, `max()`, `radius()`, `gradient()` settings are never lost during size transitions.
 
-### Recommended Usage
+### New Convenience Methods
 
-When the canvas may be hidden or have zero size initially:
+- **`refresh()`**: Combines `resize(true)` + `draw()` in one call.
+- **`isReady()`**: Check if canvas has valid dimensions.
+- **`hasPendingDraw()`**: Check if there's a pending draw request.
+- **`onSizeChange(callback)`**: Register callbacks for dimension changes.
 
+### Recommended Usage Patterns
+
+#### Pattern 1: Simple (Automatic Recovery)
 ```js
-// Create instance (canvas may be 0x0 at this point)
+// Canvas may be hidden (0x0) initially
 var heat = simpleheat('canvas')
     .data(data)
     .max(18)
     .radius(30, 20)
-    .draw();  // Safe to call even if canvas is 0x0
+    .draw();  // Marks _pendingDraw = true if 0x0
 
-// Later, when container becomes visible or canvas is resized:
-canvas.width = 1000;
-canvas.height = 600;
-heat.resize()  // Sync internal dimensions with canvas
-    .draw();   // Now renders normally
+// Later, when container becomes visible:
+container.style.display = 'block';
+heat.resize();  // Auto-draws if there was a pending draw!
 ```
 
-### Common Scenarios
+#### Pattern 2: Explicit Control
+```js
+var heat = simpleheat('canvas')
+    .data(data)
+    .draw();  // Pending if 0x0
 
-1. **Hidden containers (`display: none`)**: The canvas may report 0x0 dimensions. Call `resize()` after showing the container.
-2. **Inactive tabs**: Tab content may not be measured until activated. Call `resize()` when the tab becomes active.
-3. **Dynamic resizing**: After changing `canvas.width` or `canvas.height`, always call `resize()` before `draw()`.
+// Use status APIs to check state
+if (heat.isReady()) {
+    console.log('Canvas is ready for drawing');
+}
+if (heat.hasPendingDraw()) {
+    console.log('There is a pending draw request');
+}
 
-### Complete Example
+// Force immediate redraw when canvas becomes valid
+heat.resize(true);  // autoDraw = true forces draw
+```
+
+#### Pattern 3: Event Callback
+```js
+var heat = simpleheat('canvas')
+    .data(data)
+    .onSizeChange(function(event, heat) {
+        console.log('Canvas resized:', event.oldWidth + 'x' + event.oldHeight, 
+                    '->', event.newWidth + 'x' + event.newHeight);
+        if (event.becameValid) {
+            console.log('Canvas just became valid!');
+        }
+    })
+    .draw();
+
+// When canvas is resized, callback is automatically invoked
+```
+
+#### Pattern 4: One-Call Refresh
+```js
+// The simplest pattern: use refresh()
+var heat = simpleheat('canvas').data(data).draw();
+
+// Later, when canvas becomes visible:
+canvas.width = 1000;
+canvas.height = 600;
+heat.refresh();  // resize + draw in one call
+```
+
+### Common Scenarios & Solutions
+
+| Scenario | Solution |
+|----------|----------|
+| **Hidden container (`display: none`)** | Call `heat.resize()` or `heat.refresh()` after showing |
+| **Inactive tab** | Call `heat.refresh()` when tab activates |
+| **Dynamic resize** | Use `heat.onSizeChange(callback)` for notifications |
+| **Need explicit control** | Use `heat.resize(false)` + manual `draw()` |
+| **Simplest usage** | Use `heat.refresh()` for one-call update |
+
+### Complete Enhanced Example
 
 ```js
 var canvas = document.getElementById('heatmap');
 var heat = simpleheat(canvas);
 
-// Set up data and configuration (safe even if canvas is 0x0)
-heat.data([[100, 100, 5], [200, 200, 3], [300, 300, 4]])
+// Configure everything (safe even if canvas is 0x0)
+heat
+    .data([[100, 100, 5], [200, 200, 3], [300, 300, 4]])
     .max(10)
     .radius(25, 15)
-    .draw();  // Safe skip if 0x0
+    .gradient({0.2: 'blue', 0.5: 'lime', 1: 'red'})
+    .onSizeChange(function(event) {
+        console.log('Size changed:', event.becameValid ? '(became valid!)' : '');
+    })
+    .draw();  // Marks pending if 0x0
 
 // Later, when canvas becomes visible:
 canvas.width = 800;
 canvas.height = 600;
-heat.resize().draw();  // Now renders with all preserved data
+
+// Option A: Auto-draw if pending (default behavior)
+heat.resize();
+
+// Option B: Force draw regardless
+heat.resize(true);
+
+// Option C: One-call refresh
+heat.refresh();
+
+// All data, radius, gradient, and settings are preserved!
 ```
+
+### Backward Compatibility
+
+All existing code continues to work. The enhanced behavior is opt-in through:
+- The automatic pending draw tracking (works with existing `draw()` + `resize()` patterns)
+- New optional `autoDraw` parameter in `resize()`
+- New convenience methods like `refresh()`
