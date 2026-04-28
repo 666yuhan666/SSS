@@ -750,6 +750,10 @@
             log('info', '测试隐藏容器显示后自动重绘完整流程');
             var hiddenContainer = document.querySelector('.hidden-container');
             var canvas = document.getElementById('hiddenCanvas');
+            
+            canvas.width = 0;
+            canvas.height = 0;
+            
             var heat = simpleheat('hiddenCanvas')
                 .data(getTestData())
                 .max(10)
@@ -760,6 +764,8 @@
             assert(heat._pendingDraw === true, '初始 draw() 后 _pendingDraw 应该为 true');
             assert(heat.hasPendingDraw() === true, 'hasPendingDraw() 应该返回 true');
 
+            canvas.width = 800;
+            canvas.height = 600;
             hiddenContainer.style.display = 'block';
             heat.refresh();
 

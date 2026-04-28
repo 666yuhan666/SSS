@@ -115,7 +115,7 @@ simpleheat.prototype = {
     },
 
     refresh: function (minOpacity) {
-        this.resize(true);
+        this.resize(false);
         return this.draw(minOpacity);
     },
 
