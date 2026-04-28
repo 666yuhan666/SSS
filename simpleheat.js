@@ -94,6 +94,7 @@ simpleheat.prototype = {
         var sizeChanged = (oldWidth !== this._width) || (oldHeight !== this._height);
         var nowHasValidSize = this._hasValidSize();
         var becameValid = !hadValidSize && nowHasValidSize;
+        var becameInvalid = hadValidSize && !nowHasValidSize;
 
         if (sizeChanged) {
             this._notifySizeChange({
@@ -103,6 +104,10 @@ simpleheat.prototype = {
                 newHeight: this._height,
                 becameValid: becameValid
             });
+        }
+
+        if (becameInvalid) {
+            this._pendingDraw = true;
         }
 
         var shouldAutoDraw = (autoDraw === undefined) ? (becameValid && this._pendingDraw) : autoDraw;
