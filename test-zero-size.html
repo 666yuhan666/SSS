@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>simpleheat 0 尺寸测试</title>
+    <style>
+        body { font: 16px/1.4 "Helvetica Neue", Arial, sans-serif; padding: 20px; }
+        .test-case { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 4px; }
+        .test-result { margin-top: 10px; padding: 10px; font-weight: bold; }
+        .success { color: green; background-color: #f0fff0; }
+        .error { color: red; background-color: #fff0f0; }
+        #testCanvas { display: none; }
+        .log { margin-top: 10px; padding: 10px; background-color: #f5f5f5; font-family: monospace; font-size: 12px; max-height: 200px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <h1>simpleheat 0 尺寸 canvas 测试</h1>
+    <canvas id="testCanvas" width="1000" height="600"></canvas>
+
+    <div class="test-case">
+        <h3>测试 1: 正常尺寸 (1000x600)</h3>
+        <button onclick="testNormalSize()">运行测试</button>
+        <div id="test1Result" class="test-result">等待测试...</div>
+    </div>
+
+    <div class="test-case">
+        <h3>测试 2: 宽度为 0 (0x600)</h3>
+        <button onclick="testZeroWidth()">运行测试</button>
+        <div id="test2Result" class="test-result">等待测试...</div>
+    </div>
+
+    <div class="test-case">
+        <h3>测试 3: 高度为 0 (1000x0)</h3>
+        <button onclick="testZeroHeight()">运行测试</button>
+        <div id="test3Result" class="test-result">等待测试...</div>
+    </div>
+
+    <div class="test-case">
+        <h3>测试 4: 宽高都为 0 (0x0)</h3>
+        <button onclick="testZeroBoth()">运行测试</button>
+        <div id="test4Result" class="test-result">等待测试...</div>
+    </div>
+
+    <div class="test-case">
+        <h3>测试 5: 0 尺寸后恢复正常尺寸</h3>
+        <button onclick="testRecover()">运行测试</button>
+        <div id="test5Result" class="test-result">等待测试...</div>
+    </div>
+
+    <div class="test-case">
+        <h3>运行所有测试</h3>
+        <button onclick="runAllTests()">运行全部</button>
+        <div id="allResult" class="test-result">等待测试...</div>
+    </div>
+
+    <div class="log" id="log"></div>
+
+    <script src="simpleheat.js"></script>
+    <script>
+        var canvas = document.getElementById('testCanvas');
+        var logDiv = document.getElementById('log');
+
+        function log(message) {
+            logDiv.innerHTML += '<div>' + new Date().toLocaleTimeString() + ' - ' + message + '</div>';
+            console.log(message);
+        }
+
+        function getTestData() {
+            return [[100, 100, 5], [200, 200, 3], [300, 300, 4]];
+        }
+
+        function setResult(id, success, message) {
+            var resultDiv = document.getElementById(id);
+            resultDiv.textContent = message;
+            resultDiv.className = 'test-result ' + (success ? 'success' : 'error');
+        }
+
+        function testNormalSize() {
+            log('测试 1: 正常尺寸 (1000x600)');
+            try {
+                canvas.width = 1000;
+                canvas.height = 600;
+                var heat = simpleheat('testCanvas').data(getTestData()).max(5);
+                heat.draw();
+                log('✓ 正常尺寸绘制成功');
+                setResult('test1Result', true, '✓ 测试通过: 正常尺寸绘制成功');
+                return true;
+            } catch (e) {
+                log('✗ 正常尺寸绘制失败: ' + e.message);
+                setResult('test1Result', false, '✗ 测试失败: ' + e.message);
+                return false;
+            }
+        }
+
+        function testZeroWidth() {
+            log('测试 2: 宽度为 0 (0x600)');
+            try {
+                canvas.width = 0;
+                canvas.height = 600;
+                var heat = simpleheat('testCanvas').data(getTestData()).max(5);
+                heat.draw();
+                log('✓ 宽度为 0 时未抛出异常');
+                setResult('test2Result', true, '✓ 测试通过: 宽度为 0 时安全跳过绘制');
+                return true;
+            } catch (e) {
+                log('✗ 宽度为 0 时抛出异常: ' + e.message);
+                setResult('test2Result', false, '✗ 测试失败: ' + e.message);
+                return false;
+            }
+        }
+
+        function testZeroHeight() {
+            log('测试 3: 高度为 0 (1000x0)');
+            try {
+                canvas.width = 1000;
+                canvas.height = 0;
+                var heat = simpleheat('testCanvas').data(getTestData()).max(5);
+                heat.draw();
+                log('✓ 高度为 0 时未抛出异常');
+                setResult('test3Result', true, '✓ 测试通过: 高度为 0 时安全跳过绘制');
+                return true;
+            } catch (e) {
+                log('✗ 高度为 0 时抛出异常: ' + e.message);
+                setResult('test3Result', false, '✗ 测试失败: ' + e.message);
+                return false;
+            }
+        }
+
+        function testZeroBoth() {
+            log('测试 4: 宽高都为 0 (0x0)');
+            try {
+                canvas.width = 0;
+                canvas.height = 0;
+                var heat = simpleheat('testCanvas').data(getTestData()).max(5);
+                heat.draw();
+                log('✓ 宽高都为 0 时未抛出异常');
+                setResult('test4Result', true, '✓ 测试通过: 宽高都为 0 时安全跳过绘制');
+                return true;
+            } catch (e) {
+                log('✗ 宽高都为 0 时抛出异常: ' + e.message);
+                setResult('test4Result', false, '✗ 测试失败: ' + e.message);
+                return false;
+            }
+        }
+
+        function testRecover() {
+            log('测试 5: 0 尺寸后恢复正常尺寸');
+            try {
+                canvas.width = 0;
+                canvas.height = 0;
+                var heat = simpleheat('testCanvas').data(getTestData()).max(5);
+                heat.draw();
+                log('阶段 1: 0 尺寸时跳过绘制');
+
+                canvas.width = 1000;
+                canvas.height = 600;
+                heat.resize();
+                heat.draw();
+                log('✓ 恢复尺寸后绘制成功');
+                setResult('test5Result', true, '✓ 测试通过: 恢复尺寸后正常渲染');
+                return true;
+            } catch (e) {
+                log('✗ 恢复尺寸后绘制失败: ' + e.message);
+                setResult('test5Result', false, '✗ 测试失败: ' + e.message);
+                return false;
+            }
+        }
+
+        function runAllTests() {
+            log('========== 运行所有测试 ==========');
+            var results = [];
+            results.push(testNormalSize());
+            results.push(testZeroWidth());
+            results.push(testZeroHeight());
+            results.push(testZeroBoth());
+            results.push(testRecover());
+
+            var passed = results.filter(r => r).length;
+            var total = results.length;
+            var allPassed = passed === total;
+
+            log('========== 测试完成 ==========');
+            log('通过: ' + passed + '/' + total);
+
+            if (allPassed) {
+                setResult('allResult', true, '✓ 所有测试通过 (' + passed + '/' + total + ')');
+            } else {
+                setResult('allResult', false, '✗ 部分测试失败 (' + passed + '/' + total + ')');
+            }
+
+            return allPassed;
+        }
+    </script>
+</body>
+</html>

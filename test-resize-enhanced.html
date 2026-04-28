@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>simpleheat Resize 增强功能测试</title>
+    <style>
+        body { font: 14px/1.4 "Helvetica Neue", Arial, sans-serif; padding: 20px; }
+        h1 { font-size: 20px; margin-bottom: 20px; }
+        .test-suite { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 4px; background-color: #fafafa; }
+        .test-suite h2 { font-size: 16px; margin-top: 0; margin-bottom: 15px; color: #333; }
+        .test-case { margin: 10px 0; padding: 10px; border: 1px solid #e0e0e0; border-radius: 3px; background-color: #fff; }
+        .test-case h3 { font-size: 14px; margin-top: 0; margin-bottom: 8px; }
+        .test-result { padding: 8px 10px; margin-top: 8px; font-weight: bold; border-radius: 3px; }
+        .success { color: #2d6a4f; background-color: #d8f3dc; border: 1px solid #b7e4c7; }
+        .error { color: #7b2cbf; background-color: #ffd6e0; border: 1px solid #ffb3c1; }
+        .pending { color: #6c757d; background-color: #e9ecef; border: 1px solid #dee2e6; }
+        canvas { display: none; }
+        .log { margin-top: 15px; padding: 10px; background-color: #212529; color: #f8f9fa; font-family: 'Consolas', monospace; font-size: 12px; max-height: 300px; overflow-y: auto; border-radius: 3px; }
+        .log .info { color: #6ea8fe; }
+        .log .success { color: #75b798; background-color: transparent; border: none; }
+        .log .error { color: #ea868f; background-color: transparent; border: none; }
+        .controls { margin-bottom: 20px; }
+        button { padding: 8px 16px; margin-right: 10px; cursor: pointer; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .summary { margin: 20px 0; padding: 15px; border: 2px solid #6c757d; border-radius: 4px; background-color: #fff; }
+        .summary h2 { margin-top: 0; margin-bottom: 10px; }
+        .summary .passed { color: #2d6a4f; font-weight: bold; }
+        .summary .failed { color: #7b2cbf; font-weight: bold; }
+        .hidden-container { display: none; }
+    </style>
+</head>
+<body>
+    <h1>simpleheat Resize 增强功能测试（第二轮）</h1>
+
+    <div class="controls">
+        <button id="runAllBtn" onclick="runAllTests()">运行所有测试</button>
+        <button id="resetBtn" onclick="resetTests()">重置测试</button>
+    </div>
+
+    <div id="summary" class="summary" style="display: none;">
+        <h2>测试结果汇总</h2>
+        <div id="summaryContent"></div>
+    </div>
+
+    <canvas id="testCanvas" width="1000" height="600"></canvas>
+    <canvas id="testCanvasZero" width="0" height="0"></canvas>
+
+    <div class="hidden-container">
+        <canvas id="hiddenCanvas" width="800" height="600"></canvas>
+    </div>
+
+    <div class="test-suite">
+        <h2>测试套件 1: 状态追踪功能</h2>
+
+        <div class="test-case" id="test1">
+            <h3>1.1 初始化时 _prevWidth/_prevHeight 正确设置</h3>
+            <button onclick="runTest(1, test1_1)">运行</button>
+            <div class="test-result pending">等待测试...</div>
+        </div>
+
+        <div class="test-case" id="test2">
+            <h3>1.2 0 尺寸时 draw() 标记 _pendingDraw = true</h3>
+            <button onclick="runTest(2, test1_2)">运行</button>
+            <div class="test-result pending">等待测试...</div>
+        </div>
+
+        <div class="test-case" id="test3">
+            <h3>1.3 成功绘制后 _pendingDraw 重置为 false</h3>
+            <button onclick="runTest(3, test1_3)">运行</button>
+            <div class="test-result pending">等待测试...</div>
+        </div>
+
+        <div class="test-case" id="test4">
+            <h3>1.4 数据修改时 _dataChanged 标记</h3>
+            <button onclick="runTest(4, test1_4)">运行</button>
+            <div class="test-result pending">等待测试...</div>
+        </div>
+    </div>
+
+    <div class="test-suite">
+        <h2>测试套件 2: resize() 自动重绘功能</h2>
+
+        <div class="test-case" id="test5">
+            <h3>2.1 0 尺寸时 draw() 标记待执行</h3>
+            <button onclick="runTest(5, test2_1)">运行</button>
+            <div class="test-result pending">等待测试...</div>
+        </div>
+
+        <div class="test-case" id="test6">
+            <h3>2.2 resize() 检测从 0 变为有效尺寸</h3>
+            <button onclick="runTest(6, test2_2)">运行</button>
+            <div class="test-result pending">等待测试...</div>
+        </div>
+
+        <div class="test-case" id="test7">
+            <h3>2.3 resize() 时有待执行绘制则自动重绘</h3>
+            <button onclick="runTest(7, test2_3)">运行</button>
+            <div class="test-result pending">等待测试...</div>
+        </div>
+
+        <div class="test-case" id="test8">
+            <h3>2.4 resize(autoDraw=false) 不强制自动重绘</h3>
+            <button onclick="runTest(8, test2_4)">运行</button>
+            <div class="test-result pending">等待测试...</div>
+        </div>
+
+        <div class="test-case" id="test9">
+            <h3>2.5 resize(autoDraw=true) 强制重绘</h3>
+            <button onclick="runTest(9, test2_5)">运行</button>
+            <div class="test-result pending">等待测试...</div>
+        </div>
+
+        <div class="test-case" id="test10">
+            <h3>2.6 无待执行绘制时 resize() 不自动重绘</h3>
+            <button onclick="runTest(10, test2_6)">运行</button>
+            <div class="test-result pending">等待测试...</div>
+        </div>
+    </div>
+
+    <div class="test-suite">
+        <h2>测试套件 3: 新增公开 API</h2>
+
+        <div class="test-case" id="test11">
+            <h3>3.1 isReady() 返回正确状态</h3>
+            <button onclick="runTest(11, test3_1)">运行</button>
+            <div class="test-result pending">等待测试...</div>
+        </div>
+
+        <div class="test-case" id="test12">
+            <h3>3.2 getCanvasSize() 返回正确尺寸信息</h3>
+            <button onclick="runTest(12, test3_2)">运行</button>
+            <div class="test-result pending">等待测试...</div>
+        </div>
+
+        <div class="test-case" id="test13">
+            <h3>3.3 hasPendingDraw() 返回正确状态</h3>
+            <button onclick="runTest(13, test3_3)">运行</button>
+            <div class="test-result pending">等待测试...</div>
+        </div>
+
+        <div class="test-case" id="test14">
+            <h3>3.4 hasData() 正确判断数据状态</h3>
+            <button onclick="runTest(14, test3_4)">运行</button>
+            <div class="test-result pending">等待测试...</div>
+        </div>
+
+        <div class="test-case" id="test15">
+            <h3>3.5 refresh() 方法正确执行 resize + draw</h3>
+            <button onclick="runTest(15, test3_5)">运行</button>
+            <div class="test-result pending">等待测试...</div>
+        </div>
+
+        <div class="test-case" id="test16">
+            <h3>3.6 所有新增 API 都返回 this（链式调用）</h3>
+            <button onclick="runTest(16, test3_6)">运行</button>
+            <div class="test-result pending">等待测试...</div>
+        </div>
+    </div>
+
+    <div class="test-suite">
+        <h2>测试套件 4: onSizeChange 回调机制</h2>
+
+        <div class="test-case" id="test17">
+            <h3>4.1 注册回调后 resize() 触发回调</h3>
+            <button onclick="runTest(17, test4_1)">运行</button>
+            <div class="test-result pending">等待测试...</div>
+        </div>
+
+        <div class="test-case" id="test18">
+            <h3>4.2 回调事件包含正确的尺寸信息</h3>
+            <button onclick="runTest(18, test4_2)">运行</button>
+            <div class="test-result pending">等待测试...</div>
+        </div>
+
+        <div class="test-case" id="test19">
+            <h3>4.3 becameValid 标记正确识别 0→有效尺寸</h3>
+            <button onclick="runTest(19, test4_3)">运行</button>
+            <div class="test-result pending">等待测试...</div>
+        </div>
+
+        <div class="test-case" id="test20">
+            <h3>4.4 回调异常不影响其他功能</h3>
+            <button onclick="runTest(20, test4_4)">运行</button>
+            <div class="test-result pending">等待测试...</div>
+        </div>
+    </div>
+
+    <div class="test-suite">
+        <h2>测试套件 5: 完整场景测试</h2>
+
+        <div class="test-case" id="test21">
+            <h3>5.1 隐藏容器显示后自动重绘完整流程</h3>
+            <button onclick="runTest(21, test5_1)">运行</button>
+            <div class="test-result pending">等待测试...</div>
+        </div>
+
+        <div class="test-case" id="test22">
+            <h3>5.2 多次尺寸切换，状态保持一致</h3>
+            <button onclick="runTest(22, test5_2)">运行</button>
+            <div class="test-result pending">等待测试...</div>
+        </div>
+
+        <div class="test-case" id="test23">
+            <h3>5.3 refresh() 完整工作流程</h3>
+            <button onclick="runTest(23, test5_3)">运行</button>
+            <div class="test-result pending">等待测试...</div>
+        </div>
+
+        <div class="test-case" id="test24">
+            <h3>5.4 链式调用完整流程：data().max().draw().resize().draw()</h3>
+            <button onclick="runTest(24, test5_4)">运行</button>
+            <div class="test-result pending">等待测试...</div>
+        </div>
+
+        <div class="test-case" id="test25">
+            <h3>5.5 已有数据、半径、渐变配置不会丢失</h3>
+            <button onclick="runTest(25, test5_5)">运行</button>
+            <div class="test-result pending">等待测试...</div>
+        </div>
+    </div>
+
+    <div class="log" id="log"></div>
+
+    <script src="simpleheat.js"></script>
+    <script>
+        var logDiv = document.getElementById('log');
+        var runAllBtn = document.getElementById('runAllBtn');
+        var resetBtn = document.getElementById('resetBtn');
+        var summaryDiv = document.getElementById('summary');
+        var summaryContent = document.getElementById('summaryContent');
+
+        var testResults = {};
+        var totalTests = 25;
+
+        function log(type, message) {
+            var time = new Date().toLocaleTimeString();
+            var div = document.createElement('div');
+            div.className = type;
+            div.textContent = '[' + time + '] ' + message;
+            logDiv.appendChild(div);
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log('[' + type + '] ' + message);
+        }
+
+        function assert(condition, message) {
+            if (!condition) {
+                throw new Error(message);
+            }
+        }
+
+        function getTestData() {
+            return [[100, 100, 5], [200, 200, 3], [300, 300, 4], [400, 400, 2]];
+        }
+
+        function setResult(testNum, success, message) {
+            var testCase = document.getElementById('test' + testNum);
+            var resultDiv = testCase.querySelector('.test-result');
+            resultDiv.textContent = message;
+            resultDiv.className = 'test-result ' + (success ? 'success' : 'error');
+            testResults[testNum] = success;
+
+            if (success) {
+                log('success', '测试 ' + testNum + ' 通过: ' + message);
+            } else {
+                log('error', '测试 ' + testNum + ' 失败: ' + message);
+            }
+        }
+
+        function runTest(testNum, testFunc) {
+            log('info', '开始运行测试 ' + testNum);
+            try {
+                testFunc();
+            } catch (e) {
+                setResult(testNum, false, '✗ 测试失败: ' + e.message);
+            }
+        }
+
+        function resetTests() {
+            testResults = {};
+            for (var i = 1; i <= totalTests; i++) {
+                var testCase = document.getElementById('test' + i);
+                if (testCase) {
+                    var resultDiv = testCase.querySelector('.test-result');
+                    resultDiv.textContent = '等待测试...';
+                    resultDiv.className = 'test-result pending';
+                }
+            }
+            summaryDiv.style.display = 'none';
+            logDiv.innerHTML = '';
+            log('info', '测试已重置');
+        }
+
+        function showSummary() {
+            var passed = 0;
+            var failed = 0;
+
+            for (var i = 1; i <= totalTests; i++) {
+                if (testResults[i] === true) {
+                    passed++;
+                } else if (testResults[i] === false) {
+                    failed++;
+                }
+            }
+
+            var notRun = totalTests - passed - failed;
+
+            summaryContent.innerHTML =
+                '<span class="passed">通过: ' + passed + '</span> | ' +
+                '<span class="failed">失败: ' + failed + '</span> | ' +
+                '未运行: ' + notRun;
+
+            if (passed > 0 || failed > 0) {
+                summaryDiv.style.display = 'block';
+            }
+
+            return failed === 0 && passed === totalTests;
+        }
+
+        function test1_1() {
+            log('info', '测试初始化时 _prevWidth/_prevHeight 正确设置');
+            var canvas = document.getElementById('testCanvas');
+            canvas.width = 1000;
+            canvas.height = 600;
+            var heat = simpleheat('testCanvas');
+
+            assert(heat._prevWidth === 1000, '_prevWidth 应该为 1000');
+            assert(heat._prevHeight === 600, '_prevHeight 应该为 600');
+            setResult(1, true, '✓ _prevWidth/_prevHeight 正确初始化为 1000x600');
+        }
+
+        function test1_2() {
+            log('info', '测试 0 尺寸时 draw() 标记 _pendingDraw = true');
+            var canvas = document.getElementById('testCanvas');
+            canvas.width = 0;
+            canvas.height = 0;
+            var heat = simpleheat('testCanvas').data(getTestData());
+
+            assert(heat._pendingDraw === false, '初始 _pendingDraw 应该为 false');
+
+            heat.draw();
+
+            assert(heat._pendingDraw === true, '0 尺寸 draw() 后 _pendingDraw 应该为 true');
+            setResult(2, true, '✓ 0 尺寸时 draw() 正确标记 _pendingDraw = true');
+        }
+
+        function test1_3() {
+            log('info', '测试成功绘制后 _pendingDraw 重置为 false');
+            var canvas = document.getElementById('testCanvas');
+            canvas.width = 1000;
+            canvas.height = 600;
+            var heat = simpleheat('testCanvas').data(getTestData());
+
+            heat._pendingDraw = true;
+            heat.draw();
+
+            assert(heat._pendingDraw === false, '成功绘制后 _pendingDraw 应该为 false');
+            setResult(3, true, '✓ 成功绘制后 _pendingDraw 正确重置为 false');
+        }
+
+        function test1_4() {
+            log('info', '测试数据修改时 _dataChanged 标记');
+            var canvas = document.getElementById('testCanvas');
+            var heat = simpleheat('testCanvas');
+
+            assert(heat._dataChanged === false, '初始 _dataChanged 应该为 false');
+
+            heat.data(getTestData());
+            assert(heat._dataChanged === true, 'data() 后 _dataChanged 应该为 true');
+
+            heat.max(10);
+            assert(heat._dataChanged === true, 'max() 后 _dataChanged 应该保持 true');
+
+            heat.add([500, 500, 10]);
+            assert(heat._dataChanged === true, 'add() 后 _dataChanged 应该保持 true');
+
+            heat.clear();
+            assert(heat._dataChanged === true, 'clear() 后 _dataChanged 应该为 true');
+
+            heat.radius(30, 20);
+            assert(heat._dataChanged === true, 'radius() 后 _dataChanged 应该为 true');
+
+            heat.gradient({0: 'blue', 1: 'red'});
+            assert(heat._dataChanged === true, 'gradient() 后 _dataChanged 应该为 true');
+
+            setResult(4, true, '✓ 所有数据修改操作正确标记 _dataChanged = true');
+        }
+
+        function test2_1() {
+            log('info', '测试 0 尺寸时 draw() 标记待执行');
+            var canvas = document.getElementById('testCanvasZero');
+            var heat = simpleheat('testCanvasZero').data(getTestData()).max(5);
+
+            assert(heat._pendingDraw === false, '初始 _pendingDraw 应该为 false');
+            assert(heat.hasPendingDraw() === false, 'hasPendingDraw() 应该返回 false');
+
+            heat.draw();
+
+            assert(heat._pendingDraw === true, '0 尺寸 draw() 后 _pendingDraw 应该为 true');
+            assert(heat.hasPendingDraw() === true, 'hasPendingDraw() 应该返回 true');
+
+            setResult(5, true, '✓ 0 尺寸时 draw() 正确标记待执行绘制');
+        }
+
+        function test2_2() {
+            log('info', '测试 resize() 检测从 0 变为有效尺寸');
+            var canvas = document.getElementById('testCanvas');
+            canvas.width = 0;
+            canvas.height = 0;
+            var heat = simpleheat('testCanvas').data(getTestData());
+
+            canvas.width = 1000;
+            canvas.height = 600;
+
+            var callbackCalled = false;
+            var callbackEvent = null;
+            heat.onSizeChange(function(event, instance) {
+                callbackCalled = true;
+                callbackEvent = event;
+            });
+
+            heat.resize();
+
+            assert(callbackCalled === true, 'resize() 应该触发回调');
+            assert(callbackEvent.becameValid === true, 'becameValid 应该为 true（从 0→有效尺寸）');
+            assert(callbackEvent.oldWidth === 0, 'oldWidth 应该为 0');
+            assert(callbackEvent.oldHeight === 0, 'oldHeight 应该为 0');
+            assert(callbackEvent.newWidth === 1000, 'newWidth 应该为 1000');
+            assert(callbackEvent.newHeight === 600, 'newHeight 应该为 600');
+
+            setResult(6, true, '✓ resize() 正确检测从 0 变为有效尺寸');
+        }
+
+        function test2_3() {
+            log('info', '测试 resize() 时有待执行绘制则自动重绘');
+            var canvas = document.getElementById('testCanvas');
+            canvas.width = 0;
+            canvas.height = 0;
+            var heat = simpleheat('testCanvas').data(getTestData()).max(5);
+
+            heat.draw();
+            assert(heat._pendingDraw === true, '0 尺寸 draw() 后 _pendingDraw 应该为 true');
+
+            canvas.width = 1000;
+            canvas.height = 600;
+            heat.resize();
+
+            assert(heat._pendingDraw === false, '自动重绘后 _pendingDraw 应该为 false');
+
+            setResult(7, true, '✓ resize() 时有 pendingDraw 则自动重绘');
+        }
+
+        function test2_4() {
+            log('info', '测试 resize(autoDraw=false) 不强制自动重绘');
+            var canvas = document.getElementById('testCanvas');
+            canvas.width = 0;
+            canvas.height = 0;
+            var heat = simpleheat('testCanvas').data(getTestData()).max(5);
+
+            heat.draw();
+            var pendingBefore = heat._pendingDraw;
+
+            canvas.width = 1000;
+            canvas.height = 600;
+            heat.resize(false);
+
+            assert(heat._pendingDraw === pendingBefore, 'autoDraw=false 时不改变 pendingDraw 状态');
+
+            setResult(8, true, '✓ resize(autoDraw=false) 正确不强制重绘');
+        }
+
+        function test2_5() {
+            log('info', '测试 resize(autoDraw=true) 强制重绘');
+            var canvas = document.getElementById('testCanvas');
+            canvas.width = 0;
+            canvas.height = 0;
+            var heat = simpleheat('testCanvas').data(getTestData()).max(5);
+
+            canvas.width = 1000;
+            canvas.height = 600;
+            heat.resize(true);
+
+            assert(heat._pendingDraw === false, '强制重绘后 _pendingDraw 应该为 false');
+
+            setResult(9, true, '✓ resize(autoDraw=true) 正确强制重绘');
+        }
+
+        function test2_6() {
+            log('info', '测试无待执行绘制时 resize() 不自动重绘');
+            var canvas = document.getElementById('testCanvas');
+            canvas.width = 0;
+            canvas.height = 0;
+            var heat = simpleheat('testCanvas').data(getTestData()).max(5);
+
+            assert(heat._pendingDraw === false, '初始 _pendingDraw 应该为 false');
+
+            canvas.width = 1000;
+            canvas.height = 600;
+            heat.resize();
+
+            assert(heat._pendingDraw === false, '无待执行绘制时 resize() 后 _pendingDraw 仍为 false');
+
+            setResult(10, true, '✓ 无待执行绘制时 resize() 不自动重绘');
+        }
+
+        function test3_1() {
+            log('info', '测试 isReady() 返回正确状态');
+            var canvas = document.getElementById('testCanvas');
+            canvas.width = 0;
+            canvas.height = 0;
+            var heat = simpleheat('testCanvas');
+
+            assert(heat.isReady() === false, '0 尺寸时 isReady() 应该返回 false');
+
+            canvas.width = 1000;
+            canvas.height = 600;
+            heat.resize();
+
+            assert(heat.isReady() === true, '有效尺寸时 isReady() 应该返回 true');
+
+            setResult(11, true, '✓ isReady() 正确返回准备状态');
+        }
+
+        function test3_2() {
+            log('info', '测试 getCanvasSize() 返回正确尺寸信息');
+            var canvas = document.getElementById('testCanvas');
+            canvas.width = 800;
+            canvas.height = 500;
+            var heat = simpleheat('testCanvas');
+
+            var size = heat.getCanvasSize();
+            assert(size.width === 800, 'width 应该为 800');
+            assert(size.height === 500, 'height 应该为 500');
+            assert(size.previousWidth === 800, 'previousWidth 初始应该等于 width');
+            assert(size.previousHeight === 500, 'previousHeight 初始应该等于 height');
+
+            canvas.width = 1000;
+            canvas.height = 600;
+            heat.resize();
+
+            size = heat.getCanvasSize();
+            assert(size.width === 1000, 'resize 后 width 应该为 1000');
+            assert(size.height === 600, 'resize 后 height 应该为 600');
+            assert(size.previousWidth === 800, 'previousWidth 应该保持 800');
+            assert(size.previousHeight === 500, 'previousHeight 应该保持 500');
+
+            setResult(12, true, '✓ getCanvasSize() 正确返回当前和之前的尺寸');
+        }
+
+        function test3_3() {
+            log('info', '测试 hasPendingDraw() 返回正确状态');
+            var canvas = document.getElementById('testCanvas');
+            canvas.width = 0;
+            canvas.height = 0;
+            var heat = simpleheat('testCanvas').data(getTestData());
+
+            assert(heat.hasPendingDraw() === false, '初始 hasPendingDraw() 应该返回 false');
+
+            heat.draw();
+            assert(heat.hasPendingDraw() === true, '0 尺寸 draw() 后 hasPendingDraw() 应该返回 true');
+
+            canvas.width = 1000;
+            canvas.height = 600;
+            heat.resize();
+            assert(heat.hasPendingDraw() === false, 'resize 自动重绘后 hasPendingDraw() 应该返回 false');
+
+            setResult(13, true, '✓ hasPendingDraw() 正确返回待执行绘制状态');
+        }
+
+        function test3_4() {
+            log('info', '测试 hasData() 正确判断数据状态');
+            var canvas = document.getElementById('testCanvas');
+            var heat = simpleheat('testCanvas');
+
+            assert(heat.hasData() === false, '空数据时 hasData() 应该返回 false');
+
+            heat.data(getTestData());
+            assert(heat.hasData() === true, '有数据时 hasData() 应该返回 true');
+
+            heat.add([500, 500, 10]);
+            assert(heat.hasData() === true, 'add() 后 hasData() 应该保持 true');
+
+            heat.clear();
+            assert(heat.hasData() === false, 'clear() 后 hasData() 应该返回 false');
+
+            setResult(14, true, '✓ hasData() 正确判断数据存在状态');
+        }
+
+        function test3_5() {
+            log('info', '测试 refresh() 方法正确执行 resize + draw');
+            var canvas = document.getElementById('testCanvas');
+            canvas.width = 0;
+            canvas.height = 0;
+            var heat = simpleheat('testCanvas').data(getTestData()).max(5);
+
+            heat.draw();
+            assert(heat._pendingDraw === true, '0 尺寸 draw() 后 _pendingDraw 应该为 true');
+
+            canvas.width = 1000;
+            canvas.height = 600;
+            var result = heat.refresh();
+
+            assert(result === heat, 'refresh() 应该返回 this');
+            assert(heat._pendingDraw === false, 'refresh() 后 _pendingDraw 应该为 false');
+            assert(heat._width === 1000, 'refresh() 后 _width 应该同步为 1000');
+            assert(heat._height === 600, 'refresh() 后 _height 应该同步为 600');
+
+            setResult(15, true, '✓ refresh() 正确执行 resize + draw');
+        }
+
+        function test3_6() {
+            log('info', '测试所有新增 API 都返回 this（链式调用）');
+            var canvas = document.getElementById('testCanvas');
+            var heat = simpleheat('testCanvas');
+
+            var result1 = heat.onSizeChange(function() {});
+            assert(result1 === heat, 'onSizeChange() 应该返回 this');
+
+            var result2 = heat.isReady();
+            assert(result2 === true || result2 === false, 'isReady() 返回布尔值');
+
+            var result3 = heat.getCanvasSize();
+            assert(typeof result3 === 'object' && result3 !== null, 'getCanvasSize() 返回对象');
+
+            var result4 = heat.hasPendingDraw();
+            assert(result4 === true || result4 === false, 'hasPendingDraw() 返回布尔值');
+
+            var result5 = heat.hasData();
+            assert(result5 === true || result5 === false, 'hasData() 返回布尔值');
+
+            var result6 = heat.data(getTestData()).max(10).resize().refresh();
+            assert(result6 === heat, '链式调用后应该返回 this');
+
+            setResult(16, true, '✓ 所有新增 API 行为正确，链式调用支持完整');
+        }
+
+        function test4_1() {
+            log('info', '测试注册回调后 resize() 触发回调');
+            var canvas = document.getElementById('testCanvas');
+            canvas.width = 1000;
+            canvas.height = 600;
+            var heat = simpleheat('testCanvas');
+
+            var callbackCalled = false;
+            heat.onSizeChange(function(event, instance) {
+                callbackCalled = true;
+            });
+
+            canvas.width = 800;
+            canvas.height = 500;
+            heat.resize();
+
+            assert(callbackCalled === true, 'resize() 后回调应该被调用');
+
+            setResult(17, true, '✓ onSizeChange 回调在 resize() 时正确触发');
+        }
+
+        function test4_2() {
+            log('info', '测试回调事件包含正确的尺寸信息');
+            var canvas = document.getElementById('testCanvas');
+            canvas.width = 1000;
+            canvas.height = 600;
+            var heat = simpleheat('testCanvas');
+
+            var receivedEvent = null;
+            var receivedInstance = null;
+            heat.onSizeChange(function(event, instance) {
+                receivedEvent = event;
+                receivedInstance = instance;
+            });
+
+            canvas.width = 800;
+            canvas.height = 500;
+            heat.resize();
+
+            assert(receivedEvent !== null, '回调应该收到事件对象');
+            assert(receivedInstance === heat, '回调应该收到实例对象');
+            assert(receivedEvent.oldWidth === 1000, 'oldWidth 应该为 1000');
+            assert(receivedEvent.oldHeight === 600, 'oldHeight 应该为 600');
+            assert(receivedEvent.newWidth === 800, 'newWidth 应该为 800');
+            assert(receivedEvent.newHeight === 500, 'newHeight 应该为 500');
+            assert(receivedEvent.becameValid === false, 'becameValid 应该为 false（有效→有效）');
+
+            setResult(18, true, '✓ 回调事件包含正确的尺寸信息');
+        }
+
+        function test4_3() {
+            log('info', '测试 becameValid 标记正确识别 0→有效尺寸');
+            var canvas = document.getElementById('testCanvas');
+            canvas.width = 0;
+            canvas.height = 0;
+            var heat = simpleheat('testCanvas');
+
+            var events = [];
+            heat.onSizeChange(function(event, instance) {
+                events.push(event);
+            });
+
+            canvas.width = 1000;
+            canvas.height = 600;
+            heat.resize();
+
+            assert(events.length === 1, '应该收到 1 次回调');
+            assert(events[0].becameValid === true, 'becameValid 应该为 true（0→有效）');
+
+            canvas.width = 800;
+            canvas.height = 500;
+            heat.resize();
+
+            assert(events.length === 2, '应该收到 2 次回调');
+            assert(events[1].becameValid === false, 'becameValid 应该为 false（有效→有效）');
+
+            canvas.width = 0;
+            canvas.height = 0;
+            heat.resize();
+
+            assert(events.length === 3, '应该收到 3 次回调');
+            assert(events[2].becameValid === false, 'becameValid 应该为 false（有效→0）');
+
+            setResult(19, true, '✓ becameValid 正确标记 0→有效尺寸的变化');
+        }
+
+        function test4_4() {
+            log('info', '测试回调异常不影响其他功能');
+            var canvas = document.getElementById('testCanvas');
+            canvas.width = 0;
+            canvas.height = 0;
+            var heat = simpleheat('testCanvas').data(getTestData());
+
+            heat.onSizeChange(function(event) {
+                throw new Error('回调故意抛出异常');
+            });
+
+            canvas.width = 1000;
+            canvas.height = 600;
+
+            var errorThrown = false;
+            try {
+                heat.resize();
+            } catch (e) {
+                errorThrown = true;
+            }
+
+            assert(errorThrown === false, '回调异常不应该影响 resize() 主逻辑');
+            assert(heat._width === 1000, '尺寸应该已同步');
+            assert(heat._height === 600, '尺寸应该已同步');
+
+            setResult(20, true, '✓ 回调异常被安全捕获，不影响主功能');
+        }
+
+        function test5_1() {
+            log('info', '测试隐藏容器显示后自动重绘完整流程');
+            var hiddenContainer = document.querySelector('.hidden-container');
+            var canvas = document.getElementById('hiddenCanvas');
+            
+            canvas.width = 0;
+            canvas.height = 0;
+            
+            var heat = simpleheat('hiddenCanvas')
+                .data(getTestData())
+                .max(10)
+                .radius(30, 20)
+                .gradient({0: 'blue', 0.5: 'lime', 1: 'red'});
+
+            heat.draw();
+            assert(heat._pendingDraw === true, '初始 draw() 后 _pendingDraw 应该为 true');
+            assert(heat.hasPendingDraw() === true, 'hasPendingDraw() 应该返回 true');
+
+            canvas.width = 800;
+            canvas.height = 600;
+            hiddenContainer.style.display = 'block';
+            heat.refresh();
+
+            assert(heat._pendingDraw === false, 'refresh() 后 _pendingDraw 应该为 false');
+            assert(heat._width === 800, '_width 应该为 800');
+            assert(heat._height === 600, '_height 应该为 600');
+            assert(heat._data.length === 4, '数据长度应该保持 4');
+            assert(heat._max === 10, '_max 应该保持 10');
+            assert(heat._r === 50, '_r 应该为 50（30+20）');
+
+            setResult(21, true, '✓ 隐藏容器显示后自动重绘完整流程工作正常');
+        }
+
+        function test5_2() {
+            log('info', '测试多次尺寸切换，状态保持一致');
+            var canvas = document.getElementById('testCanvas');
+            canvas.width = 0;
+            canvas.height = 0;
+            var heat = simpleheat('testCanvas')
+                .data(getTestData())
+                .max(5);
+
+            for (var i = 0; i < 3; i++) {
+                canvas.width = 0;
+                canvas.height = 0;
+                heat.resize();
+                heat.draw();
+                assert(heat._pendingDraw === true, '第 ' + (i+1) + ' 轮：0 尺寸后 _pendingDraw 应该为 true');
+
+                canvas.width = 1000;
+                canvas.height = 600;
+                heat.resize();
+                assert(heat._pendingDraw === false, '第 ' + (i+1) + ' 轮：resize 后 _pendingDraw 应该为 false');
+                assert(heat._data.length === 4, '第 ' + (i+1) + ' 轮：数据长度应该保持 4');
+                assert(heat._max === 5, '第 ' + (i+1) + ' 轮：_max 应该保持 5');
+            }
+
+            setResult(22, true, '✓ 多次尺寸切换后状态保持一致');
+        }
+
+        function test5_3() {
+            log('info', '测试 refresh() 完整工作流程');
+            var canvas = document.getElementById('testCanvas');
+            canvas.width = 0;
+            canvas.height = 0;
+            var heat = simpleheat('testCanvas')
+                .data(getTestData())
+                .max(10)
+                .radius(40, 25)
+                .gradient({0.2: 'blue', 0.5: 'cyan', 0.8: 'lime', 1: 'red'});
+
+            heat.draw();
+
+            canvas.width = 1200;
+            canvas.height = 800;
+
+            var result = heat.refresh(0.1);
+
+            assert(result === heat, 'refresh() 应该返回 this');
+            assert(heat._width === 1200, '_width 应该为 1200');
+            assert(heat._height === 800, '_height 应该为 800');
+            assert(heat._pendingDraw === false, '_pendingDraw 应该为 false');
+            assert(heat._data.length === 4, '数据长度应该为 4');
+            assert(heat._max === 10, '_max 应该为 10');
+            assert(heat._r === 65, '_r 应该为 65（40+25）');
+
+            setResult(23, true, '✓ refresh() 完整工作流程正常');
+        }
+
+        function test5_4() {
+            log('info', '测试链式调用完整流程');
+            var canvas = document.getElementById('testCanvas');
+            canvas.width = 0;
+            canvas.height = 0;
+
+            var heat = simpleheat('testCanvas')
+                .data(getTestData())
+                .max(8)
+                .radius(35, 20)
+                .gradient({0: 'blue', 1: 'red'})
+                .draw()
+                .onSizeChange(function(e) {});
+
+            assert(heat.hasPendingDraw() === true, 'draw() 后 hasPendingDraw() 应该为 true');
+            assert(heat._data.length === 4, '数据长度应该为 4');
+            assert(heat._max === 8, '_max 应该为 8');
+            assert(heat._r === 55, '_r 应该为 55（35+20）');
+
+            canvas.width = 1000;
+            canvas.height = 600;
+
+            heat.resize()
+                .draw();
+
+            assert(heat.hasPendingDraw() === false, '最终 hasPendingDraw() 应该为 false');
+            assert(heat._width === 1000, '_width 应该为 1000');
+            assert(heat._height === 600, '_height 应该为 600');
+
+            setResult(24, true, '✓ 完整链式调用流程工作正常');
+        }
+
+        function test5_5() {
+            log('info', '测试已有数据、半径、渐变配置不会丢失');
+            var canvas = document.getElementById('testCanvas');
+            canvas.width = 0;
+            canvas.height = 0;
+
+            var testData = getTestData();
+            var customGradient = {0.1: 'darkblue', 0.3: 'blue', 0.5: 'cyan', 0.7: 'lime', 0.9: 'yellow', 1: 'red'};
+
+            var heat = simpleheat('testCanvas')
+                .data(testData)
+                .max(15)
+                .radius(50, 30)
+                .gradient(customGradient);
+
+            heat.draw();
+            assert(heat._data === testData, '_data 引用应该保持不变');
+            assert(heat._max === 15, '_max 应该保持 15');
+            assert(heat._r === 80, '_r 应该为 80（50+30）');
+            assert(heat._grad instanceof Uint8ClampedArray, '_grad 应该存在');
+
+            for (var i = 0; i < 5; i++) {
+                canvas.width = i % 2 === 0 ? 0 : 1000;
+                canvas.height = i % 2 === 0 ? 0 : 600;
+                heat.resize();
+                if (i % 2 === 1) {
+                    heat.draw();
+                }
+            }
+
+            assert(heat._data === testData, '多次切换后 _data 引用仍保持不变');
+            assert(heat._max === 15, '多次切换后 _max 仍保持 15');
+            assert(heat._r === 80, '多次切换后 _r 仍保持 80');
+            assert(heat._grad instanceof Uint8ClampedArray, '多次切换后 _grad 仍存在');
+
+            setResult(25, true, '✓ 数据、半径、渐变配置在尺寸切换过程中不会丢失');
+        }
+
+        function runAllTests() {
+            runAllBtn.disabled = true;
+            log('info', '========== 开始运行所有测试（第二轮） ==========');
+
+            var tests = [
+                {num: 1, func: test1_1},
+                {num: 2, func: test1_2},
+                {num: 3, func: test1_3},
+                {num: 4, func: test1_4},
+                {num: 5, func: test2_1},
+                {num: 6, func: test2_2},
+                {num: 7, func: test2_3},
+                {num: 8, func: test2_4},
+                {num: 9, func: test2_5},
+                {num: 10, func: test2_6},
+                {num: 11, func: test3_1},
+                {num: 12, func: test3_2},
+                {num: 13, func: test3_3},
+                {num: 14, func: test3_4},
+                {num: 15, func: test3_5},
+                {num: 16, func: test3_6},
+                {num: 17, func: test4_1},
+                {num: 18, func: test4_2},
+                {num: 19, func: test4_3},
+                {num: 20, func: test4_4},
+                {num: 21, func: test5_1},
+                {num: 22, func: test5_2},
+                {num: 23, func: test5_3},
+                {num: 24, func: test5_4},
+                {num: 25, func: test5_5}
+            ];
+
+            for (var i = 0; i < tests.length; i++) {
+                runTest(tests[i].num, tests[i].func);
+            }
+
+            var allPassed = showSummary();
+            if (allPassed) {
+                log('success', '========== 所有 ' + totalTests + ' 个测试全部通过！==========');
+            } else {
+                log('error', '========== 部分测试失败 ==========');
+            }
+            runAllBtn.disabled = false;
+        }
+
+        log('info', '第二轮测试页面已加载，点击"运行所有测试"开始测试');
+    </script>
+</body>
+</html>

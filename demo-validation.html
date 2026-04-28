@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>simpleheat 0 宽高 Canvas 验证 Demo</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { font: 14px/1.4 "Helvetica Neue", Arial, sans-serif; padding: 20px; max-width: 1400px; margin: 0 auto; }
+        h1 { font-size: 24px; margin-bottom: 20px; color: #333; }
+        h2 { font-size: 18px; margin-top: 0; margin-bottom: 12px; color: #555; border-bottom: 2px solid #e0e0e0; padding-bottom: 8px; }
+        
+        .container { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 1000px) {
+            .container { grid-template-columns: 1fr; }
+        }
+        
+        .panel { border: 1px solid #ccc; border-radius: 6px; padding: 15px; background-color: #fafafa; }
+        
+        .canvas-container { position: relative; border: 2px dashed #999; margin: 10px 0; background-color: #fff; min-height: 200px; }
+        .canvas-container canvas { display: block; }
+        .canvas-label { position: absolute; top: 5px; left: 5px; background: rgba(255,255,255,0.9); padding: 2px 8px; border-radius: 3px; font-size: 12px; font-weight: bold; }
+        
+        .controls { margin: 10px 0; }
+        button { padding: 8px 16px; margin-right: 8px; margin-bottom: 8px; cursor: pointer; background-color: #4CAF50; color: white; border: none; border-radius: 4px; font-size: 13px; }
+        button:hover { background-color: #45a049; }
+        button.secondary { background-color: #2196F3; }
+        button.secondary:hover { background-color: #1976D2; }
+        button.warning { background-color: #ff9800; }
+        button.warning:hover { background-color: #e68900; }
+        button:disabled { background-color: #cccccc; cursor: not-allowed; }
+        
+        .status { margin: 10px 0; padding: 10px; background-color: #fff; border: 1px solid #ddd; border-radius: 4px; font-family: 'Consolas', monospace; font-size: 12px; line-height: 1.6; }
+        .status .key { color: #666; }
+        .status .value { color: #d32f2f; font-weight: bold; }
+        .status .value.good { color: #4CAF50; }
+        
+        .log { margin-top: 10px; padding: 10px; background-color: #212529; color: #f8f9fa; font-family: 'Consolas', monospace; font-size: 12px; max-height: 200px; overflow-y: auto; border-radius: 4px; }
+        .log .info { color: #6ea8fe; }
+        .log .success { color: #75b798; }
+        .log .warning { color: #ffc107; }
+        
+        .scenario { margin-bottom: 20px; padding: 15px; background-color: #fff; border: 1px solid #e0e0e0; border-radius: 4px; }
+        .scenario h3 { font-size: 14px; margin-top: 0; margin-bottom: 10px; color: #333; }
+        .scenario .description { font-size: 12px; color: #666; margin-bottom: 10px; }
+        
+        .hidden { display: none !important; }
+        
+        .config-panel { background-color: #f5f5f5; padding: 10px; border-radius: 4px; margin-bottom: 10px; }
+        .config-row { display: flex; align-items: center; margin-bottom: 8px; }
+        .config-row label { width: 120px; font-size: 13px; }
+        .config-row input { padding: 6px 8px; width: 80px; border: 1px solid #ccc; border-radius: 3px; font-size: 13px; }
+        .config-row span { margin-left: 8px; font-size: 12px; color: #666; }
+        
+        .table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 12px; }
+        .table th, .table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        .table th { background-color: #f5f5f5; font-weight: bold; }
+        .table td:nth-child(1) { width: 150px; }
+        
+        .quick-links { margin-bottom: 20px; padding: 15px; background-color: #e8f4fc; border: 1px solid #b8daff; border-radius: 4px; }
+        .quick-links h3 { margin-top: 0; margin-bottom: 10px; font-size: 14px; }
+        .quick-links a { color: #0066cc; text-decoration: none; margin-right: 15px; font-size: 13px; }
+        .quick-links a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <h1>simpleheat 0 宽高 Canvas 验证 Demo</h1>
+    
+    <div class="quick-links">
+        <h3>快速导航：</h3>
+        <a href="#scenario1">场景 1: 0 宽高跳过绘制</a>
+        <a href="#scenario2">场景 2: 恢复尺寸后重绘</a>
+        <a href="#scenario3">场景 3: 数据保留</a>
+        <a href="#scenario4">场景 4: 半径配置保留</a>
+        <a href="#scenario5">场景 5: 渐变配置保留</a>
+        <a href="#scenario6">场景 6: resize 使用时机</a>
+    </div>
+
+    <div class="container">
+        <div class="panel">
+            <h2>验证场景</h2>
+            
+            <div id="scenario1" class="scenario">
+                <h3>场景 1: 0 宽高跳过绘制</h3>
+                <p class="description">当 canvas 宽高为 0 时，调用 draw() 应该安全跳过，不抛出异常。</p>
+                <div class="canvas-container" id="container1">
+                    <span class="canvas-label">Canvas 1 (0x0)</span>
+                    <canvas id="canvas1" width="0" height="0"></canvas>
+                </div>
+                <div class="controls">
+                    <button onclick="testScenario1_step1()">1. 设置 canvas 为 0x0</button>
+                    <button onclick="testScenario1_step2()">2. 调用 draw()</button>
+                    <button onclick="testScenario1_reset()">重置</button>
+                </div>
+                <div class="status" id="status1">状态: 等待测试</div>
+                <div class="log" id="log1"></div>
+            </div>
+
+            <div id="scenario2" class="scenario">
+                <h3>场景 2: 恢复尺寸后重绘</h3>
+                <p class="description">从 0 宽高恢复到正常尺寸后，热力图应该能正确渲染。</p>
+                <div class="canvas-container" id="container2">
+                    <span class="canvas-label">Canvas 2</span>
+                    <canvas id="canvas2" width="0" height="0"></canvas>
+                </div>
+                <div class="config-panel">
+                    <div class="config-row">
+                        <label>目标尺寸:</label>
+                        <input type="number" id="targetWidth2" value="400">
+                        <span>×</span>
+                        <input type="number" id="targetHeight2" value="300">
+                    </div>
+                </div>
+                <div class="controls">
+                    <button onclick="testScenario2_step1()">1. 初始化（0x0，设置数据并 draw）</button>
+                    <button onclick="testScenario2_step2()">2. 恢复尺寸并 resize()</button>
+                    <button onclick="testScenario2_reset()">重置</button>
+                </div>
+                <div class="status" id="status2">状态: 等待测试</div>
+                <div class="log" id="log2"></div>
+            </div>
+
+            <div id="scenario3" class="scenario">
+                <h3>场景 3: 已有数据保留</h3>
+                <p class="description">在 0 宽高期间设置的数据，恢复尺寸后应该仍然可用。</p>
+                <div class="canvas-container" id="container3">
+                    <span class="canvas-label">Canvas 3</span>
+                    <canvas id="canvas3" width="0" height="0"></canvas>
+                </div>
+                <div class="controls">
+                    <button onclick="testScenario3_step1()">1. 0x0 时设置数据</button>
+                    <button onclick="testScenario3_step2()">2. 0x0 时添加数据点</button>
+                    <button onclick="testScenario3_step3()">3. 恢复尺寸渲染</button>
+                    <button onclick="testScenario3_reset()">重置</button>
+                </div>
+                <div class="status" id="status3">状态: 等待测试</div>
+                <div class="log" id="log3"></div>
+            </div>
+
+            <div id="scenario4" class="scenario">
+                <h3>场景 4: 半径配置保留</h3>
+                <p class="description">在 0 宽高期间设置的 radius 配置，恢复尺寸后应该仍然有效。</p>
+                <div class="canvas-container" id="container4">
+                    <span class="canvas-label">Canvas 4</span>
+                    <canvas id="canvas4" width="0" height="0"></canvas>
+                </div>
+                <div class="config-panel">
+                    <div class="config-row">
+                        <label>半径:</label>
+                        <input type="number" id="radius4" value="50">
+                        <span>px</span>
+                    </div>
+                    <div class="config-row">
+                        <label>模糊:</label>
+                        <input type="number" id="blur4" value="30">
+                        <span>px</span>
+                    </div>
+                </div>
+                <div class="controls">
+                    <button onclick="testScenario4_step1()">1. 0x0 时设置 radius</button>
+                    <button onclick="testScenario4_step2()">2. 恢复尺寸渲染</button>
+                    <button onclick="testScenario4_reset()">重置</button>
+                </div>
+                <div class="status" id="status4">状态: 等待测试</div>
+                <div class="log" id="log4"></div>
+            </div>
+
+            <div id="scenario5" class="scenario">
+                <h3>场景 5: 渐变配置保留</h3>
+                <p class="description">在 0 宽高期间设置的 gradient 配置，恢复尺寸后应该仍然有效。</p>
+                <div class="canvas-container" id="container5">
+                    <span class="canvas-label">Canvas 5</span>
+                    <canvas id="canvas5" width="0" height="0"></canvas>
+                </div>
+                <div class="controls">
+                    <button onclick="testScenario5_step1()">1. 0x0 时设置自定义渐变</button>
+                    <button onclick="testScenario5_step2()">2. 恢复尺寸渲染</button>
+                    <button onclick="testScenario5_reset()">重置</button>
+                </div>
+                <div class="status" id="status5">状态: 等待测试</div>
+                <div class="log" id="log5"></div>
+            </div>
+
+            <div id="scenario6" class="scenario">
+                <h3>场景 6: resize 使用时机</h3>
+                <p class="description">演示何时应该调用 resize()，以及不同参数的效果。</p>
+                <div class="canvas-container" id="container6">
+                    <span class="canvas-label">Canvas 6</span>
+                    <canvas id="canvas6" width="0" height="0"></canvas>
+                </div>
+                <div class="controls">
+                    <button class="warning" onclick="testScenario6_step1()">1. 隐藏容器 → 初始化并 draw()</button>
+                    <button class="secondary" onclick="testScenario6_step2()">2. resize() 【默认：智能自动重绘】</button>
+                    <button class="secondary" onclick="testScenario6_step3()">3. resize(false) 【不重绘】</button>
+                    <button class="secondary" onclick="testScenario6_step4()">4. resize(true) 【强制重绘】</button>
+                    <button class="secondary" onclick="testScenario6_step5()">5. refresh() 【便捷方法】</button>
+                    <button onclick="testScenario6_reset()">重置</button>
+                </div>
+                <div class="status" id="status6">状态: 等待测试</div>
+                <div class="log" id="log6"></div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h2>参考信息</h2>
+            
+            <h3>状态 API 一览</h3>
+            <table class="table">
+                <thead>
+                    <tr><th>API</th><th>返回值</th><th>用途</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>heat.isReady()</code></td><td>boolean</td><td>检查 canvas 是否有有效尺寸</td></tr>
+                    <tr><td><code>heat.hasPendingDraw()</code></td><td>boolean</td><td>检查是否有待执行的绘制</td></tr>
+                    <tr><td><code>heat.hasData()</code></td><td>boolean</td><td>检查是否有数据</td></tr>
+                    <tr><td><code>heat.getCanvasSize()</code></td><td>object</td><td>获取当前和之前的尺寸</td></tr>
+                </tbody>
+            </table>
+
+            <h3>resize() 参数行为</h3>
+            <table class="table">
+                <thead>
+                    <tr><th>调用方式</th><th>行为</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>heat.resize()</code></td><td>智能：从 0→有效尺寸 且 有待绘制 → 自动重绘</td></tr>
+                    <tr><td><code>heat.resize(true)</code></td><td>强制：resize 后立即重绘</td></tr>
+                    <tr><td><code>heat.resize(false)</code></td><td>从不：只同步尺寸，不重绘</td></tr>
+                    <tr><td><code>heat.refresh()</code></td><td>便捷：resize(true) + draw()</td></tr>
+                </tbody>
+            </table>
+
+            <h3>边界行为速查</h3>
+            <table class="table">
+                <thead>
+                    <tr><th>场景</th><th>行为</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>canvas.width = 0, draw()</td><td>✅ 安全跳过，标记 _pendingDraw = true</td></tr>
+                    <tr><td>canvas.height = 0, draw()</td><td>✅ 安全跳过，标记 _pendingDraw = true</td></tr>
+                    <tr><td>data() 在 0 尺寸时</td><td>✅ 数据保持，不丢失</td></tr>
+                    <tr><td>max() 在 0 尺寸时</td><td>✅ 配置保持，不丢失</td></tr>
+                    <tr><td>radius() 在 0 尺寸时</td><td>✅ 配置保持，不丢失</td></tr>
+                    <tr><td>gradient() 在 0 尺寸时</td><td>✅ 配置保持，不丢失</td></tr>
+                    <tr><td>add() 在 0 尺寸时</td><td>✅ 数据追加，不丢失</td></tr>
+                    <tr><td>从 0→有效尺寸 + resize()</td><td>✅ 自动重绘（如有待绘制）</td></tr>
+                    <tr><td>多次尺寸切换</td><td>✅ 所有配置保持</td></tr>
+                </tbody>
+            </table>
+
+            <h3>全局状态</h3>
+            <div class="status" id="globalStatus">
+                <div><span class="key">当前时间:</span> <span class="value" id="currentTime">-</span></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="simpleheat.js"></script>
+    <script>
+        function log(containerId, type, message) {
+            var logDiv = document.getElementById(containerId);
+            var time = new Date().toLocaleTimeString();
+            var div = document.createElement('div');
+            div.className = type;
+            div.textContent = '[' + time + '] ' + message;
+            logDiv.appendChild(div);
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log('[' + type + '] ' + message);
+        }
+
+        function setStatus(containerId, message, isSuccess) {
+            var statusDiv = document.getElementById(containerId);
+            if (isSuccess === undefined) {
+                statusDiv.innerHTML = '状态: ' + message;
+            } else if (isSuccess) {
+                statusDiv.innerHTML = '状态: <span style="color: #4CAF50; font-weight: bold;">✓ ' + message + '</span>';
+            } else {
+                statusDiv.innerHTML = '状态: <span style="color: #d32f2f; font-weight: bold;">✗ ' + message + '</span>';
+            }
+        }
+
+        function getSampleData(count) {
+            var data = [];
+            var baseX = 80;
+            var baseY = 80;
+            for (var i = 0; i < count; i++) {
+                var x = baseX + (i % 4) * 80 + Math.random() * 40;
+                var y = baseY + Math.floor(i / 4) * 80 + Math.random() * 40;
+                var value = Math.floor(Math.random() * 10) + 1;
+                data.push([x, y, value]);
+            }
+            return data;
+        }
+
+        function updateCanvasSize(canvasId, width, height) {
+            var canvas = document.getElementById(canvasId);
+            canvas.width = width;
+            canvas.height = height;
+            if (width === 0 || height === 0) {
+                canvas.style.display = 'none';
+            } else {
+                canvas.style.display = 'block';
+            }
+        }
+
+        function updateCurrentTime() {
+            document.getElementById('currentTime').textContent = new Date().toLocaleString();
+        }
+        setInterval(updateCurrentTime, 1000);
+        updateCurrentTime();
+
+        var heat1, heat2, heat3, heat4, heat5, heat6;
+
+        function testScenario1_step1() {
+            updateCanvasSize('canvas1', 0, 0);
+            heat1 = simpleheat('canvas1');
+            setStatus('status1', 'canvas 已设置为 0x0');
+            log('log1', 'info', 'Canvas 设置为 0x0');
+        }
+
+        function testScenario1_step2() {
+            if (!heat1) {
+                setStatus('status1', '请先执行步骤 1', false);
+                return;
+            }
+            try {
+                heat1.data(getSampleData(10)).max(10).draw();
+                setStatus('status1', 'draw() 执行完成，未抛出异常', true);
+                log('log1', 'success', 'draw() 在 0x0 时安全跳过，未抛出异常');
+                log('log1', 'info', 'isReady(): ' + heat1.isReady());
+                log('log1', 'info', 'hasPendingDraw(): ' + heat1.hasPendingDraw());
+            } catch (e) {
+                setStatus('status1', 'draw() 抛出异常: ' + e.message, false);
+                log('log1', 'error', 'draw() 抛出异常: ' + e.message);
+            }
+        }
+
+        function testScenario1_reset() {
+            heat1 = null;
+            updateCanvasSize('canvas1', 0, 0);
+            setStatus('status1', '等待测试');
+            document.getElementById('log1').innerHTML = '';
+        }
+
+        function testScenario2_step1() {
+            var w = parseInt(document.getElementById('targetWidth2').value) || 400;
+            var h = parseInt(document.getElementById('targetHeight2').value) || 300;
+            updateCanvasSize('canvas2', 0, 0);
+            heat2 = simpleheat('canvas2')
+                .data(getSampleData(15))
+                .max(10)
+                .draw();
+            setStatus('status2', '已在 0x0 时初始化并 draw，待执行绘制: ' + heat2.hasPendingDraw());
+            log('log2', 'info', 'Canvas 设置为 0x0');
+            log('log2', 'info', '设置数据: 15 个点');
+            log('log2', 'info', 'draw() 已调用');
+            log('log2', 'info', 'isReady(): ' + heat2.isReady());
+            log('log2', 'info', 'hasPendingDraw(): ' + heat2.hasPendingDraw());
+            log('log2', 'warning', '目标尺寸: ' + w + 'x' + h);
+        }
+
+        function testScenario2_step2() {
+            if (!heat2) {
+                setStatus('status2', '请先执行步骤 1', false);
+                return;
+            }
+            var w = parseInt(document.getElementById('targetWidth2').value) || 400;
+            var h = parseInt(document.getElementById('targetHeight2').value) || 300;
+            
+            var hadPending = heat2.hasPendingDraw();
+            updateCanvasSize('canvas2', w, h);
+            heat2.resize();
+            
+            setStatus('status2', '尺寸已恢复为 ' + w + 'x' + h + '，自动重绘: ' + hadPending, true);
+            log('log2', 'success', 'Canvas 尺寸恢复为 ' + w + 'x' + h);
+            log('log2', 'success', 'resize() 已调用');
+            log('log2', 'info', '恢复前 hasPendingDraw(): ' + hadPending);
+            log('log2', 'info', '恢复后 hasPendingDraw(): ' + heat2.hasPendingDraw());
+            log('log2', 'info', 'isReady(): ' + heat2.isReady());
+        }
+
+        function testScenario2_reset() {
+            heat2 = null;
+            updateCanvasSize('canvas2', 0, 0);
+            setStatus('status2', '等待测试');
+            document.getElementById('log2').innerHTML = '';
+        }
+
+        function testScenario3_step1() {
+            updateCanvasSize('canvas3', 0, 0);
+            var initialData = getSampleData(8);
+            heat3 = simpleheat('canvas3')
+                .data(initialData)
+                .max(8);
+            setStatus('status3', '已设置初始数据: ' + heat3._data.length + ' 个点');
+            log('log3', 'info', 'Canvas 设置为 0x0');
+            log('log3', 'info', 'data() 设置: ' + initialData.length + ' 个点');
+            log('log3', 'info', '当前数据长度: ' + heat3._data.length);
+            log('log3', 'info', 'hasData(): ' + heat3.hasData());
+        }
+
+        function testScenario3_step2() {
+            if (!heat3) {
+                setStatus('status3', '请先执行步骤 1', false);
+                return;
+            }
+            var newPoint = [200, 150, 10];
+            heat3.add(newPoint);
+            setStatus('status3', '已添加新数据点，当前: ' + heat3._data.length + ' 个点');
+            log('log3', 'info', 'add() 添加: [' + newPoint.join(', ') + ']');
+            log('log3', 'info', '当前数据长度: ' + heat3._data.length);
+        }
+
+        function testScenario3_step3() {
+            if (!heat3) {
+                setStatus('status3', '请先执行步骤 1', false);
+                return;
+            }
+            var dataBefore = heat3._data.length;
+            updateCanvasSize('canvas3', 400, 300);
+            heat3.resize().draw();
+            
+            setStatus('status3', '已恢复尺寸，数据长度: ' + heat3._data.length + '（恢复前: ' + dataBefore + '）', true);
+            log('log3', 'success', 'Canvas 尺寸恢复为 400x300');
+            log('log3', 'success', 'resize().draw() 已调用');
+            log('log3', 'info', '恢复前数据长度: ' + dataBefore);
+            log('log3', 'info', '恢复后数据长度: ' + heat3._data.length);
+            log('log3', 'info', 'hasData(): ' + heat3.hasData());
+        }
+
+        function testScenario3_reset() {
+            heat3 = null;
+            updateCanvasSize('canvas3', 0, 0);
+            setStatus('status3', '等待测试');
+            document.getElementById('log3').innerHTML = '';
+        }
+
+        function testScenario4_step1() {
+            var r = parseInt(document.getElementById('radius4').value) || 50;
+            var b = parseInt(document.getElementById('blur4').value) || 30;
+            updateCanvasSize('canvas4', 0, 0);
+            heat4 = simpleheat('canvas4')
+                .data(getSampleData(12))
+                .max(10)
+                .radius(r, b);
+            setStatus('status4', '已在 0x0 时设置 radius(' + r + ', ' + b + ')，_r = ' + heat4._r);
+            log('log4', 'info', 'Canvas 设置为 0x0');
+            log('log4', 'info', 'radius(' + r + ', ' + b + ') 已设置');
+            log('log4', 'info', '_r = ' + heat4._r + ' (radius + blur)');
+            log('log4', 'info', '_circle 已创建: ' + (heat4._circle !== undefined));
+        }
+
+        function testScenario4_step2() {
+            if (!heat4) {
+                setStatus('status4', '请先执行步骤 1', false);
+                return;
+            }
+            var rBefore = heat4._r;
+            updateCanvasSize('canvas4', 400, 300);
+            heat4.resize().draw();
+            
+            setStatus('status4', '已恢复尺寸，_r = ' + heat4._r + '（恢复前: ' + rBefore + '）', true);
+            log('log4', 'success', 'Canvas 尺寸恢复为 400x300');
+            log('log4', 'success', 'resize().draw() 已调用');
+            log('log4', 'info', '恢复前 _r: ' + rBefore);
+            log('log4', 'info', '恢复后 _r: ' + heat4._r);
+            log('log4', 'info', '_circle 仍然存在: ' + (heat4._circle !== undefined));
+        }
+
+        function testScenario4_reset() {
+            heat4 = null;
+            updateCanvasSize('canvas4', 0, 0);
+            setStatus('status4', '等待测试');
+            document.getElementById('log4').innerHTML = '';
+        }
+
+        function testScenario5_step1() {
+            updateCanvasSize('canvas5', 0, 0);
+            var customGradient = {
+                0.0: '#000080',
+                0.25: '#0000ff',
+                0.5: '#00ffff',
+                0.75: '#ffff00',
+                1.0: '#ff0000'
+            };
+            heat5 = simpleheat('canvas5')
+                .data(getSampleData(15))
+                .max(10)
+                .gradient(customGradient);
+            setStatus('status5', '已在 0x0 时设置自定义渐变，_grad 已创建: ' + (heat5._grad !== undefined));
+            log('log5', 'info', 'Canvas 设置为 0x0');
+            log('log5', 'info', 'gradient() 设置自定义渐变');
+            log('log5', 'info', '_grad 已创建: ' + (heat5._grad !== undefined));
+            log('log5', 'info', '_grad 类型: ' + (heat5._grad ? heat5._grad.constructor.name : 'undefined'));
+        }
+
+        function testScenario5_step2() {
+            if (!heat5) {
+                setStatus('status5', '请先执行步骤 1', false);
+                return;
+            }
+            var gradBefore = heat5._grad;
+            updateCanvasSize('canvas5', 400, 300);
+            heat5.resize().draw();
+            
+            setStatus('status5', '已恢复尺寸，_grad 仍然存在: ' + (heat5._grad !== undefined), true);
+            log('log5', 'success', 'Canvas 尺寸恢复为 400x300');
+            log('log5', 'success', 'resize().draw() 已调用');
+            log('log5', 'info', '恢复前 _grad 存在: ' + (gradBefore !== undefined));
+            log('log5', 'info', '恢复后 _grad 存在: ' + (heat5._grad !== undefined));
+            log('log5', 'info', '_grad 仍然是: ' + (heat5._grad ? heat5._grad.constructor.name : 'undefined'));
+        }
+
+        function testScenario5_reset() {
+            heat5 = null;
+            updateCanvasSize('canvas5', 0, 0);
+            setStatus('status5', '等待测试');
+            document.getElementById('log5').innerHTML = '';
+        }
+
+        function testScenario6_step1() {
+            updateCanvasSize('canvas6', 0, 0);
+            heat6 = simpleheat('canvas6')
+                .data(getSampleData(20))
+                .max(12)
+                .draw();
+            setStatus('status6', '已在 0x0 时初始化，hasPendingDraw: ' + heat6.hasPendingDraw());
+            log('log6', 'warning', '=== 步骤 1: 隐藏容器场景 ===');
+            log('log6', 'info', 'Canvas 设置为 0x0（模拟隐藏容器）');
+            log('log6', 'info', '设置数据: 20 个点');
+            log('log6', 'info', 'draw() 已调用');
+            log('log6', 'info', 'isReady(): ' + heat6.isReady());
+            log('log6', 'info', 'hasPendingDraw(): ' + heat6.hasPendingDraw());
+        }
+
+        function testScenario6_step2() {
+            if (!heat6) {
+                setStatus('status6', '请先执行步骤 1', false);
+                return;
+            }
+            var hadPending = heat6.hasPendingDraw();
+            updateCanvasSize('canvas6', 400, 300);
+            heat6.resize();
+            
+            setStatus('status6', 'resize() 默认行为：自动重绘 = ' + hadPending, true);
+            log('log6', 'warning', '=== 步骤 2: resize() 默认行为 ===');
+            log('log6', 'info', 'Canvas 尺寸恢复为 400x300');
+            log('log6', 'info', 'resize() 已调用（无参数）');
+            log('log6', 'info', '恢复前 hasPendingDraw(): ' + hadPending);
+            log('log6', 'info', '恢复后 hasPendingDraw(): ' + heat6.hasPendingDraw());
+            if (hadPending) {
+                log('log6', 'success', '因为有待执行绘制，resize() 自动重绘了');
+            } else {
+                log('log6', 'info', '没有待执行绘制，resize() 只同步了尺寸');
+            }
+        }
+
+        function testScenario6_step3() {
+            if (!heat6) {
+                setStatus('status6', '请先执行步骤 1', false);
+                return;
+            }
+            heat6._pendingDraw = true;
+            updateCanvasSize('canvas6', 350, 250);
+            heat6.resize(false);
+            
+            setStatus('status6', 'resize(false)：已同步尺寸但未重绘，hasPendingDraw: ' + heat6.hasPendingDraw());
+            log('log6', 'warning', '=== 步骤 3: resize(false) ===');
+            log('log6', 'info', 'Canvas 尺寸改为 350x250');
+            log('log6', 'info', 'resize(false) 已调用');
+            log('log6', 'info', 'hasPendingDraw(): ' + heat6.hasPendingDraw());
+            log('log6', 'info', 'isReady(): ' + heat6.isReady());
+            log('log6', 'warning', 'resize(false) 只同步尺寸，不重绘');
+        }
+
+        function testScenario6_step4() {
+            if (!heat6) {
+                setStatus('status6', '请先执行步骤 1', false);
+                return;
+            }
+            updateCanvasSize('canvas6', 300, 200);
+            heat6.resize(true);
+            
+            setStatus('status6', 'resize(true)：已强制重绘，hasPendingDraw: ' + heat6.hasPendingDraw(), true);
+            log('log6', 'warning', '=== 步骤 4: resize(true) ===');
+            log('log6', 'info', 'Canvas 尺寸改为 300x200');
+            log('log6', 'info', 'resize(true) 已调用');
+            log('log6', 'success', 'resize(true) 强制重绘了');
+            log('log6', 'info', 'hasPendingDraw(): ' + heat6.hasPendingDraw());
+        }
+
+        function testScenario6_step5() {
+            if (!heat6) {
+                setStatus('status6', '请先执行步骤 1', false);
+                return;
+            }
+            updateCanvasSize('canvas6', 400, 300);
+            heat6.refresh(0.1);
+            
+            setStatus('status6', 'refresh()：已执行 resize(true) + draw()', true);
+            log('log6', 'warning', '=== 步骤 5: refresh() ===');
+            log('log6', 'info', 'Canvas 尺寸恢复为 400x300');
+            log('log6', 'info', 'refresh(0.1) 已调用');
+            log('log6', 'success', 'refresh() = resize(true) + draw()，一步完成');
+            log('log6', 'info', 'isReady(): ' + heat6.isReady());
+            log('log6', 'info', 'hasPendingDraw(): ' + heat6.hasPendingDraw());
+        }
+
+        function testScenario6_reset() {
+            heat6 = null;
+            updateCanvasSize('canvas6', 0, 0);
+            setStatus('status6', '等待测试');
+            document.getElementById('log6').innerHTML = '';
+        }
+
+        log('log1', 'info', '验证 Demo 已加载');
+        log('log2', 'info', '验证 Demo 已加载');
+        log('log3', 'info', '验证 Demo 已加载');
+        log('log4', 'info', '验证 Demo 已加载');
+        log('log5', 'info', '验证 Demo 已加载');
+        log('log6', 'info', '验证 Demo 已加载');
+    </script>
+</body>
+</html>
