@@ -103,6 +103,7 @@ When using simpleheat in scenarios where the canvas may initially have zero dime
 
 - **Smart `draw()` with pending state**: When canvas width or height is 0, `draw()` marks `_pendingDraw = true` instead of just returning. This enables automatic redraw when canvas becomes valid.
 - **Automatic redraw on `resize()`**: When `resize()` detects that canvas changed from 0 to valid size AND there's a pending draw, it automatically calls `draw()`.
+- **`becameInvalid` detection (v2.1)**: When canvas changes from valid size to 0, `resize()` marks `_pendingDraw = true`. This ensures that when canvas recovers from 0, it will automatically redraw even if `draw()` was called before the canvas became 0.
 - **State tracking**: New internal state variables track previous dimensions, pending draws, and data changes.
 - **All configurations preserved**: `data()`, `max()`, `radius()`, `gradient()` settings are never lost during size transitions.
 
@@ -275,6 +276,7 @@ All existing code continues to work. The enhanced behavior is opt-in through:
 
 | 场景 | 行为 |
 |------|------|
+| 从有效→0 尺寸 + `heat.resize()` | ✅ 标记 `_pendingDraw=true`（新增 v2.1） |
 | 从 0→有效尺寸 + `heat.resize()` + 有待绘制 | ✅ 自动重绘 |
 | 从 0→有效尺寸 + `heat.resize()` + 无待绘制 | 只同步尺寸 |
 | 从 0→有效尺寸 + `heat.refresh()` | ✅ 强制重绘 |
@@ -308,5 +310,18 @@ All existing code continues to work. The enhanced behavior is opt-in through:
 
 ### 自动化测试
 
-- `test-zero-size-comprehensive.html`: 第一轮测试（20 个用例）
-- `test-resize-enhanced.html`: 第二轮测试（25 个用例）
+- `test-zero-size-comprehensive.html`: 第一轮测试（20 个用例）- 基础 0 尺寸处理
+- `test-resize-enhanced.html`: 第二轮测试（25 个用例）- 增强 resize 行为和状态追踪
+- `test-resize-autoredraw.html`: 第三轮测试（8 个用例）- 自动重绘逻辑验证（v2.1 新增）
+
+**测试覆盖的核心场景**：
+
+| 场景 | 测试文件 | 状态 |
+|------|----------|------|
+| 0 宽高跳过绘制 | test-zero-size-comprehensive.html, test-resize-autoredraw.html | ✅ |
+| 恢复尺寸后重绘 | test-zero-size-comprehensive.html, test-resize-enhanced.html, test-resize-autoredraw.html | ✅ |
+| 已有数据保留 | test-zero-size-comprehensive.html, test-resize-autoredraw.html | ✅ |
+| 半径配置保留 | test-zero-size-comprehensive.html, test-resize-autoredraw.html | ✅ |
+| 渐变配置保留 | test-zero-size-comprehensive.html, test-resize-autoredraw.html | ✅ |
+| 从有效→0→有效自动重绘（v2.1 新增） | test-resize-autoredraw.html | ✅ |
+| 连续多次 resize 不损坏状态 | test-resize-autoredraw.html | ✅ |
