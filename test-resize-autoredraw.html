@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>simpleheat Resize 自动重绘验证测试</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        .test-result { margin: 10px 0; padding: 10px; }
+        .passed { background-color: #e8f5e8; color: #2e7d32; }
+        .failed { background-color: #ffebee; color: #c62828; }
+        canvas { border: 1px solid #999; }
+        .hidden { display: none; }
+        .log { background: #f5f5f5; padding: 10px; margin: 10px 0; font-family: monospace; font-size: 12px; max-height: 300px; overflow-y: auto; }
+        .log-entry { margin: 2px 0; }
+        .log-info { color: #1976d2; }
+        .log-success { color: #2e7d32; font-weight: bold; }
+        .log-error { color: #c62828; font-weight: bold; }
+        h2 { color: #333; }
+        .summary { font-size: 18px; font-weight: bold; margin: 20px 0; padding: 15px; }
+    </style>
+</head>
+<body>
+    <h1>simpleheat Resize 自动重绘验证测试</h1>
+    
+    <div class="summary" id="summary">准备运行测试...</div>
+    
+    <div class="log" id="log"></div>
+    
+    <div style="display: none;">
+        <canvas id="testCanvas" width="1000" height="600"></canvas>
+    </div>
+    
+    <div class="hidden-container hidden">
+        <canvas id="hiddenCanvas" width="800" height="600"></canvas>
+    </div>
+
+    <script src="simpleheat.js"></script>
+    <script>
+        var testsPassed = 0;
+        var testsFailed = 0;
+        var totalTests = 0;
+        
+        function log(type, message) {
+            var logDiv = document.getElementById('log');
+            var entry = document.createElement('div');
+            entry.className = 'log-entry log-' + type;
+            entry.textContent = '[' + type.toUpperCase() + '] ' + message;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log('[' + type + ']', message);
+        }
+        
+        function assert(condition, message) {
+            if (!condition) {
+                throw new Error('断言失败: ' + message);
+            }
+        }
+        
+        function setResult(testNum, passed, message) {
+            totalTests++;
+            if (passed) {
+                testsPassed++;
+                log('success', '测试 ' + testNum + ' 通过: ' + message);
+            } else {
+                testsFailed++;
+                log('error', '测试 ' + testNum + ' 失败: ' + message);
+            }
+        }
+        
+        function getTestData() {
+            return [
+                [100, 100, 5],
+                [200, 200, 10],
+                [300, 300, 8],
+                [400, 400, 3]
+            ];
+        }
+        
+        function updateSummary() {
+            var summary = document.getElementById('summary');
+            if (testsFailed === 0) {
+                summary.className = 'summary passed';
+                summary.textContent = '========== 所有 ' + totalTests + ' 个测试全部通过！==========';
+            } else {
+                summary.className = 'summary failed';
+                summary.textContent = '========== 测试完成: ' + testsPassed + ' 通过, ' + testsFailed + ' 失败 ==========';
+            }
+        }
+        
+        function runAllTests() {
+            log('info', '========== 开始运行所有测试 ==========');
+            
+            try {
+                test_scenario_a();
+            } catch (e) {
+                setResult(1, false, e.message);
+            }
+            
+            try {
+                test_scenario_b();
+            } catch (e) {
+                setResult(2, false, e.message);
+            }
+            
+            try {
+                test_scenario_c();
+            } catch (e) {
+                setResult(3, false, e.message);
+            }
+            
+            try {
+                test_scenario_d();
+            } catch (e) {
+                setResult(4, false, e.message);
+            }
+            
+            try {
+                test_scenario_e();
+            } catch (e) {
+                setResult(5, false, e.message);
+            }
+            
+            try {
+                test_scenario_f();
+            } catch (e) {
+                setResult(6, false, e.message);
+            }
+            
+            try {
+                test_scenario_g();
+            } catch (e) {
+                setResult(7, false, e.message);
+            }
+            
+            try {
+                test_scenario_h();
+            } catch (e) {
+                setResult(8, false, e.message);
+            }
+            
+            updateSummary();
+        }
+        
+        function test_scenario_a() {
+            log('info', '场景 A: 0 尺寸时调用 draw() → 尺寸恢复后自动重绘');
+            
+            var canvas = document.getElementById('testCanvas');
+            canvas.width = 0;
+            canvas.height = 0;
+            
+            var heat = simpleheat('testCanvas')
+                .data(getTestData())
+                .max(10)
+                .radius(25, 15);
+            
+            assert(heat._width === 0, '初始 _width 应该为 0');
+            assert(heat._height === 0, '初始 _height 应该为 0');
+            assert(heat._pendingDraw === false, '初始 _pendingDraw 应该为 false');
+            
+            heat.draw();
+            assert(heat._pendingDraw === true, '0 尺寸时 draw() 后 _pendingDraw 应该为 true');
+            assert(heat.hasPendingDraw() === true, 'hasPendingDraw() 应该返回 true');
+            
+            canvas.width = 800;
+            canvas.height = 600;
+            heat.resize();
+            
+            assert(heat._pendingDraw === false, 'resize() 后 _pendingDraw 应该为 false');
+            assert(heat._width === 800, '_width 应该为 800');
+            assert(heat._height === 600, '_height 应该为 600');
+            assert(heat._data.length === 4, '数据长度应该保持 4');
+            
+            setResult(1, true, '✓ 场景 A 工作正常: 0 尺寸时 draw() 标记 pending，尺寸恢复后自动重绘');
+        }
+        
+        function test_scenario_b() {
+            log('info', '场景 B: 有效尺寸时调用 draw() → 尺寸变为 0 → 尺寸恢复后自动重绘');
+            
+            var canvas = document.getElementById('testCanvas');
+            canvas.width = 800;
+            canvas.height = 600;
+            
+            var heat = simpleheat('testCanvas')
+                .data(getTestData())
+                .max(10)
+                .radius(25, 15);
+            
+            assert(heat._width === 800, '初始 _width 应该为 800');
+            assert(heat._height === 600, '初始 _height 应该为 600');
+            
+            heat.draw();
+            assert(heat._pendingDraw === false, '成功绘制后 _pendingDraw 应该为 false');
+            
+            canvas.width = 0;
+            canvas.height = 0;
+            heat.resize();
+            
+            assert(heat._width === 0, 'resize 后 _width 应该为 0');
+            assert(heat._height === 0, 'resize 后 _height 应该为 0');
+            assert(heat._pendingDraw === true, '从有效变为 0 尺寸后 _pendingDraw 应该为 true');
+            
+            canvas.width = 800;
+            canvas.height = 600;
+            heat.resize();
+            
+            assert(heat._width === 800, '恢复后 _width 应该为 800');
+            assert(heat._height === 600, '恢复后 _height 应该为 600');
+            assert(heat._pendingDraw === false, '恢复后 _pendingDraw 应该为 false');
+            
+            setResult(2, true, '✓ 场景 B 工作正常: 从有效变为 0 时标记 pending，尺寸恢复后自动重绘');
+        }
+        
+        function test_scenario_c() {
+            log('info', '场景 C: 数据、半径、渐变配置在尺寸切换中保持不变');
+            
+            var canvas = document.getElementById('testCanvas');
+            canvas.width = 800;
+            canvas.height = 600;
+            
+            var customGradient = {0.2: 'blue', 0.5: 'lime', 0.8: 'yellow', 1: 'red'};
+            var originalData = getTestData();
+            
+            var heat = simpleheat('testCanvas')
+                .data(originalData)
+                .max(15)
+                .radius(30, 20)
+                .gradient(customGradient);
+            
+            var originalR = heat._r;
+            var originalMax = heat._max;
+            var originalGrad = heat._grad;
+            
+            assert(heat._data.length === 4, '初始数据长度应该为 4');
+            assert(heat._r === 50, '初始 _r 应该为 50 (30+20)');
+            assert(heat._max === 15, '初始 _max 应该为 15');
+            
+            heat.draw();
+            
+            canvas.width = 0;
+            canvas.height = 0;
+            heat.resize();
+            
+            assert(heat._data.length === 4, '尺寸变为 0 后数据长度应该保持 4');
+            assert(heat._max === 15, '尺寸变为 0 后 _max 应该保持 15');
+            assert(heat._r === 50, '尺寸变为 0 后 _r 应该保持 50');
+            assert(heat._grad === originalGrad, '尺寸变为 0 后 _grad 应该保持不变');
+            
+            canvas.width = 1000;
+            canvas.height = 800;
+            heat.resize();
+            
+            assert(heat._data.length === 4, '尺寸恢复后数据长度应该保持 4');
+            assert(heat._max === 15, '尺寸恢复后 _max 应该保持 15');
+            assert(heat._r === 50, '尺寸恢复后 _r 应该保持 50');
+            assert(heat._grad === originalGrad, '尺寸恢复后 _grad 应该保持不变');
+            assert(heat._width === 1000, '恢复后 _width 应该为 1000');
+            assert(heat._height === 800, '恢复后 _height 应该为 800');
+            
+            setResult(3, true, '✓ 场景 C 工作正常: 数据、半径、渐变配置在尺寸切换中保持不变');
+        }
+        
+        function test_scenario_d() {
+            log('info', '场景 D: 连续多次 resize 不会让状态变坏');
+            
+            var canvas = document.getElementById('testCanvas');
+            canvas.width = 800;
+            canvas.height = 600;
+            
+            var heat = simpleheat('testCanvas')
+                .data(getTestData())
+                .max(10)
+                .radius(25, 15)
+                .draw();
+            
+            assert(heat._pendingDraw === false, '初始 _pendingDraw 应该为 false');
+            
+            for (var i = 0; i < 10; i++) {
+                canvas.width = 0;
+                canvas.height = 0;
+                heat.resize();
+                assert(heat._pendingDraw === true, '第 ' + (i+1) + ' 次变为 0 后 _pendingDraw 应该为 true');
+                
+                canvas.width = 800;
+                canvas.height = 600;
+                heat.resize();
+                assert(heat._pendingDraw === false, '第 ' + (i+1) + ' 次恢复后 _pendingDraw 应该为 false');
+                assert(heat._data.length === 4, '数据长度应该保持 4');
+            }
+            
+            assert(heat._width === 800, '最终 _width 应该为 800');
+            assert(heat._height === 600, '最终 _height 应该为 600');
+            assert(heat._data.length === 4, '最终数据长度应该为 4');
+            
+            setResult(4, true, '✓ 场景 D 工作正常: 连续 10 次 resize 后状态仍然一致');
+        }
+        
+        function test_scenario_e() {
+            log('info', '场景 E: refresh() 方法正确执行 resize + draw');
+            
+            var canvas = document.getElementById('testCanvas');
+            canvas.width = 0;
+            canvas.height = 0;
+            
+            var heat = simpleheat('testCanvas')
+                .data(getTestData())
+                .max(10)
+                .radius(25, 15);
+            
+            heat.draw();
+            assert(heat._pendingDraw === true, '0 尺寸时 draw() 后 _pendingDraw 应该为 true');
+            
+            canvas.width = 800;
+            canvas.height = 600;
+            heat.refresh();
+            
+            assert(heat._width === 800, 'refresh 后 _width 应该为 800');
+            assert(heat._height === 600, 'refresh 后 _height 应该为 600');
+            assert(heat._pendingDraw === false, 'refresh 后 _pendingDraw 应该为 false');
+            
+            setResult(5, true, '✓ 场景 E 工作正常: refresh() 正确执行 resize + draw');
+        }
+        
+        function test_scenario_f() {
+            log('info', '场景 F: resize(autoDraw=true) 强制重绘');
+            
+            var canvas = document.getElementById('testCanvas');
+            canvas.width = 800;
+            canvas.height = 600;
+            
+            var heat = simpleheat('testCanvas')
+                .data(getTestData())
+                .max(10)
+                .radius(25, 15);
+            
+            heat.draw();
+            assert(heat._pendingDraw === false, '成功绘制后 _pendingDraw 应该为 false');
+            
+            canvas.width = 1000;
+            canvas.height = 800;
+            heat.resize(true);
+            
+            assert(heat._width === 1000, 'resize 后 _width 应该为 1000');
+            assert(heat._height === 800, 'resize 后 _height 应该为 800');
+            assert(heat._pendingDraw === false, 'resize(true) 后 _pendingDraw 应该为 false');
+            
+            setResult(6, true, '✓ 场景 F 工作正常: resize(autoDraw=true) 强制重绘');
+        }
+        
+        function test_scenario_g() {
+            log('info', '场景 G: resize(autoDraw=false) 不强制重绘');
+            
+            var canvas = document.getElementById('testCanvas');
+            canvas.width = 0;
+            canvas.height = 0;
+            
+            var heat = simpleheat('testCanvas')
+                .data(getTestData())
+                .max(10)
+                .radius(25, 15);
+            
+            heat.draw();
+            assert(heat._pendingDraw === true, '0 尺寸时 draw() 后 _pendingDraw 应该为 true');
+            
+            canvas.width = 800;
+            canvas.height = 600;
+            heat.resize(false);
+            
+            assert(heat._width === 800, 'resize 后 _width 应该为 800');
+            assert(heat._height === 600, 'resize 后 _height 应该为 600');
+            assert(heat._pendingDraw === true, 'resize(false) 后 _pendingDraw 应该保持 true');
+            
+            heat.draw();
+            assert(heat._pendingDraw === false, '手动 draw() 后 _pendingDraw 应该为 false');
+            
+            setResult(7, true, '✓ 场景 G 工作正常: resize(autoDraw=false) 不强制重绘');
+        }
+        
+        function test_scenario_h() {
+            log('info', '场景 H: 链式调用完整流程: data().max().radius().draw().resize().draw()');
+            
+            var canvas = document.getElementById('testCanvas');
+            canvas.width = 0;
+            canvas.height = 0;
+            
+            var result = simpleheat('testCanvas')
+                .data(getTestData())
+                .max(15)
+                .radius(30, 20)
+                .gradient({0: 'blue', 0.5: 'lime', 1: 'red'})
+                .draw();
+            
+            assert(result._pendingDraw === true, '链式调用 draw() 后 _pendingDraw 应该为 true');
+            assert(result._data.length === 4, '数据长度应该为 4');
+            assert(result._max === 15, '_max 应该为 15');
+            assert(result._r === 50, '_r 应该为 50');
+            
+            canvas.width = 800;
+            canvas.height = 600;
+            
+            var finalResult = result.resize().draw();
+            
+            assert(finalResult._width === 800, '最终 _width 应该为 800');
+            assert(finalResult._height === 600, '最终 _height 应该为 600');
+            assert(finalResult._pendingDraw === false, '最终 _pendingDraw 应该为 false');
+            assert(finalResult === result, '链式调用应该返回相同的实例');
+            
+            setResult(8, true, '✓ 场景 H 工作正常: 完整链式调用流程');
+        }
+        
+        window.onload = function() {
+            log('info', '测试页面已加载，开始自动运行所有测试...');
+            runAllTests();
+        };
+    </script>
+</body>
+</html>
